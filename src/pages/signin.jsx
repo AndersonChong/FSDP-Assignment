@@ -7,10 +7,10 @@ export default function SignIn() {
       <div className="left-panel">
         <div className="left-top">
           <span className="dot" />
-          <span className="brand">Chat Bot</span>
+          <span className="brand">Flying Bot</span>
         </div>
         <div className="left-bottom">
-          Welcome to better-chatbot. Sign in to experience our AI-powered
+          Welcome to Flying Bot. Sign in to experience our AI-powered
           conversational tools.
         </div>
         <div className="lines lines-1" />
@@ -32,7 +32,7 @@ export default function SignIn() {
           />
 
           <label className="field-label" htmlFor="password">Password</label>
-          <input id="password" type="password" className="input" />
+          <input id="password" type="password" placeholder="Password" className="input" />
 
           <button className="primary-btn">Sign in</button>
 
