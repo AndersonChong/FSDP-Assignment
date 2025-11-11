@@ -5,6 +5,8 @@ import { useNavigate } from "react-router-dom";
 import EmojiPicker from "emoji-picker-react";
 import { HexColorPicker } from "react-colorful";
 import "../styles/createagent.css";
+import { db } from "../firebase";
+import { collection, addDoc, Timestamp } from "firebase/firestore";
 
 export default function CreateAgentPage() {
   const navigate = useNavigate();
@@ -16,10 +18,39 @@ export default function CreateAgentPage() {
   const [newSpecialty, setNewSpecialty] = useState("");
   const [summary, setSummary] = useState("");
   const [guidelines, setGuidelines] = useState("");
+  const [agentName, setAgentName] = useState("");
 
   const handleLogoClick = () => navigate("/");
-    const handleCreateAgent = () => {
-    navigate("/agent-chat"); 
+
+  const handleCreateAgent = async () => {
+    if (!agentName || !summary || !guidelines) {
+      alert("Please fill in all required fields.");
+      return;
+    }
+
+    try {
+      const agentData = {
+        name: agentName,
+        emoji: selectedEmoji,
+        color: selectedColor,
+        specialties: specialties,
+        summary: summary,
+        guidelines: guidelines,
+        createdAt: Timestamp.now(),
+      };
+
+      console.log("📝 Attempting to add agent:", agentData);
+
+      const docRef = await addDoc(collection(db, "agents"), agentData);
+      console.log("✅ Agent added with ID:", docRef.id);
+
+      alert("Agent created successfully!");
+      setShowModal(false);
+      navigate("/agent-chat");
+    } catch (error) {
+      console.error("🔥 Error creating agent:", error);
+      alert("Failed to create agent: " + error.message);
+    }
   };
 
   const handleAddSpecialty = () => {
@@ -60,7 +91,12 @@ export default function CreateAgentPage() {
 
           <label>Create your agent’s identity: Add a name and icon.</label>
           <div className="row">
-            <input type="text" placeholder="Agent Name" />
+            <input
+              type="text"
+              placeholder="Agent Name"
+              value={agentName}
+              onChange={(e) => setAgentName(e.target.value)}
+            />
             <button
               className="icon-preview-btn"
               style={{ backgroundColor: selectedColor }}
@@ -141,7 +177,10 @@ export default function CreateAgentPage() {
             <option>Web Scraper</option>
           </select>
 
-          <button className="create-btn">Create</button>
+          {/* Button now opens modal */}
+          <button className="create-btn" onClick={() => setShowModal(true)}>
+            Create
+          </button>
         </div>
 
         {/* === ICON PICKER MODAL === */}
