@@ -1,9 +1,11 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/sidebar.css";
+import { useTheme } from '../context/ThemeContext'; 
 
 const SideBar = () => {
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <div className="sidebar">
@@ -25,6 +27,17 @@ const SideBar = () => {
           View AI Agents
         </button>
       </div>
+      
+      <div className="menu" style={{ marginTop: 'auto', paddingTop: '20px', borderTop: '1px solid var(--border-color)' }}>
+        <button 
+          className="menu-btn theme-toggle-btn" 
+          onClick={toggleTheme}
+          title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`}
+        >
+          {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
+        </button>
+      </div>
+
     </div>
   );
 };

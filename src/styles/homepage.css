@@ -5,7 +5,7 @@
   height: 100vh;
   width: 100vw;
   overflow: hidden;
-  background: #1e1e1e; 
+  background: var(--bg-primary); 
 }
 
 /* === MAIN AREA === */
@@ -13,8 +13,8 @@
   flex: 1;
   height: 100vh;
   width: 100%;
-  background: #1e1e1e; 
-  color: #e0e0e0; 
+  background: var(--bg-primary); 
+  color: var(--text-primary); 
   padding: 30px 60px;
   box-sizing: border-box;
   overflow-y: auto;
@@ -35,7 +35,7 @@
 .dashboard-header h1 {
   font-size: 36px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -46,24 +46,24 @@
 }
 
 .dashboard-header input {
-  background: #333333;
-border: 1px solid #3a3a3a;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
   padding: 10px 12px;
   border-radius: 8px;
-  color: #e0e0e0;
+  color: var(--text-primary);
   outline: none;
   width: 200px;
   font-size: 14px;
 }
 
 .dashboard-header input::placeholder {
-  color:#999; 
+  color: var(--text-secondary);
 }
 
 .dashboard-header button {
-  background: #4a4a4a;
-  border: none;
-  color: #fff;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
   font-weight: 500;
   padding: 10px 12px;
   border-radius: 8px;
@@ -71,7 +71,7 @@ border: 1px solid #3a3a3a;
 }
 
 .dashboard-header button:hover {
-  background: #333;
+  background: var(--border-color);
 }
 
 /* === LOGO === */
@@ -85,7 +85,7 @@ border: 1px solid #3a3a3a;
 .logo {
   width: 300px;
   height: auto;
-  object-fit: contain;  	
+  object-fit: contain;    
 }
 
 
@@ -102,47 +102,47 @@ border: 1px solid #3a3a3a;
 .card {
   flex: 1;
   min-width: 200px;
-  background: #252525;
+  background: var(--bg-secondary);
   padding: 20px 0;
   border-radius: 14px;
-  border: 1px solid #3a3a3a; 
+  border: 1px solid var(--border-color); 
   text-align: center;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15); 
+  box-shadow: 0 4px 10px var(--shadow-color); 
   transition: all 0.25s ease;
 }
 
 .card:hover {
   transform: translateY(-2px); 
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.06); 
+  box-shadow: 0 6px 15px var(--shadow-color); 
 }
 
 .card h3 {
   margin: 0;
   font-size: 15px;
   font-weight: 500;
-  color: #c0c0c0; 
+  color: var(--text-secondary); 
 }
 
 .card p {
   font-size: 26px;
   font-weight: 700;
   margin-top: 8px;
-  color: #ffff;
+  color: var(--text-primary);
 }
 
 /* === USAGE CHART / AGENT SECTION CONTAINERS === */
 .usage-card, .agent-section {
-  background: #252525;
+  background: var(--bg-secondary);
   border-radius: 16px;
   padding: 25px 30px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
-  border: 1px solid #3a3a3a; 
+  box-shadow: 0 4px 10px var(--shadow-color);
+  border: 1px solid var(--border-color); 
   margin-bottom: 30px;
 }
 
 .usage-card h3, .agent-section h3 {
   font-size: 18px;
-  color: #ffffff;
+  color: var(--text-primary);
   margin-bottom: 12px;
   font-weight: 600;
   padding-left: 10px;
@@ -150,60 +150,60 @@ border: 1px solid #3a3a3a;
 
 /* === AGENT LIST === */
 .agent-list {
-  background: #252525; 
+  background: var(--bg-secondary); 
   border-radius: 12px;
-  border: 1px solid #3a3a3a; 
+  border: 1px solid var(--border-color); 
   padding: 10px;
 }
 
 .agent-row {
   display: flex;
   justify-content: space-between;
-  border-bottom: 1px solid #f0f0f0; 
+  border-bottom: 1px solid var(--border-color); 
   padding: 8px 0;
 }
 
 .more {
   text-align: center;
-  color: #777;
+  color: var(--text-secondary);
   cursor: pointer;
   margin-top: 10px;
   transition: 0.2s ease;
 }
 
 .more:hover {
-  color: #4a4a4a; 
+  color: var(--text-primary); 
 }
 
 /* === SETTINGS ICON BUTTON === */
 .settings-btn {
   position: absolute;
   right: 40px;
-  background: #f0f0f0; 
-  border: 1px solid #e0e0e0;
+  background: var(--bg-input); 
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 10px;
   cursor: pointer;
   transition: 0.25s ease;
-  box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 8px var(--shadow-color);
 }
 
 .settings-btn:hover {
-  background: #e5e5e5;
+  background: var(--border-color);
   transform: rotate(25deg);
 }
 
 .settings-icon {
   font-size: 26px;
-  color: #fff; 
+  color: var(--text-primary); 
 }
 
 /* === SCROLLBAR === */
 ::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.15); 
+  background-color: var(--border-color); 
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(0, 0, 0, 0.25);
+  background-color: var(--text-secondary);
 }

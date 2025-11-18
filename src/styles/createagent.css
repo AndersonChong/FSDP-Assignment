@@ -3,34 +3,34 @@
   display: flex;
   height: 100vh;
   width: 100%;
-  background: #1e1e1e; 
-  color: #e0e0e0; 
+  background: var(--bg-primary); 
+  color: var(--text-primary); 
   font-family: "Inter", sans-serif;
 }
 
 /* === FORM CONTAINER (The Card) === */
 .form-container {
-  background: #252525; 
+  background: var(--bg-secondary); 
   border-radius: 12px;
   padding: 30px;
-  border: 1px solid #3a3a3a; 
+  border: 1px solid var(--border-color); 
   max-width: 800px;
 }
 
 .form-container h2 {
   font-size: 22px;
   margin-bottom: 20px;
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 .form-container p {
   margin-bottom: 20px;
-  color: #cccccc; 
+  color: var(--text-secondary); 
 }
 
 label {
   display: block;
-  color: #c0c0c0; 
+  color: var(--text-secondary); 
   margin-bottom: 8px;
   margin-top: 18px;
 }
@@ -41,17 +41,17 @@ textarea,
 select {
   width: 90%;
   padding: 12px 15px;
-  background: #333333; 
-  border: 1px solid #4a4a4a; 
+  background: var(--bg-input); 
+  border: 1px solid var(--border-color); 
   border-radius: 8px;
-  color: #ffffff;
+  color: var(--text-primary);
   font-size: 15px;
   margin-bottom: 10px;
 }
 
 input::placeholder,
 textarea::placeholder {
-  color: #999; 
+  color: var(--text-secondary); 
 }
 
 textarea {
@@ -74,9 +74,9 @@ textarea {
 /* === SMALL BUTTONS (Icon, Add) === */
 .icon-btn,
 .add-btn {
-  background: #333333; 
-  color: #fff;
-  border: 1px solid #4a4a4a;
+  background: var(--bg-input); 
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 10px 16px;
   cursor: pointer;
@@ -85,12 +85,14 @@ textarea {
 
 .icon-btn:hover,
 .add-btn:hover {
-  background: #4a4a4a; 
+  background: var(--border-color); 
 }
 
-/* === CREATE BUTTON (Primary Action) === */
-.create-btn {
-  background: #007bff; 
+/* === PRIMARY BUTTONS (Create/Save) === */
+.create-btn,
+.save-btn,
+.save-tag-btn {
+  background: var(--action-btn); 
   color: #fff; 
   font-weight: 600;
   border: none;
@@ -101,7 +103,9 @@ textarea {
   transition: all 0.3s;
 }
 
-.create-btn:hover {
+.create-btn:hover,
+.save-btn:hover,
+.save-tag-btn:hover {
   background: #0056b3; 
 }
 
@@ -110,7 +114,7 @@ textarea {
   flex-shrink: 0;
   width: 90px;
   height: 90px;
-  border: 1px solid #4a4a4a; 
+  border: 1px solid var(--border-color); 
   border-radius: 12px;
   cursor: pointer;
   display: flex;       
@@ -118,8 +122,11 @@ textarea {
   justify-content: center;
   font-size: 50px;
   line-height: 1;
+  background: var(--bg-input);
+  color: var(--text-primary);
 }
 
+/* === MODAL === */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -135,82 +142,62 @@ textarea {
 
 
 .modal {
-  background: #252525; 
+  background: var(--bg-secondary); 
   padding: 25px 30px;
   border-radius: 12px;
-  border: 1px solid #3a3a3a;
+  border: 1px solid var(--border-color);
   width: 400px;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .save-btn {
-  background: #007bff; 
-  color: #fff;
-  border: none;
   padding: 10px 20px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
   margin-top: 10px;
-}
-
-.save-btn:hover {
-  background: #0056b3;
 }
 
 /* === SPECIALTIES SECTION (Tags) === */
 .add-specialty-box input {
-  background: #333333;
-  border: 1px solid #4a4a4a;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
   border-radius: 6px;
-  color: #fff;
+  color: var(--text-primary);
   padding: 8px 10px;
   width: 180px;
 }
 
 .save-tag-btn {
-  background: #007bff; 
-  color: #fff;
-  border: none;
-  border-radius: 6px;
+  /* Re-set padding for tag button */
   padding: 8px 14px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: all 0.3s;
-}
-
-.save-tag-btn:hover {
-  background: #0056b3;
 }
 
 /* === TAG DISPLAY === */
 .tag {
-  background: #3a3a3a; 
-  color: #fff;
+  background: var(--bg-input); 
+  color: var(--text-primary);
   padding: 6px 12px;
   border-radius: 6px;
   display: flex;
   align-items: center;
   gap: 6px;
-  border: 1px solid #4a4a4a;
+  border: 1px solid var(--border-color);
   font-size: 14px;
 }
 
 .remove-tag {
   cursor: pointer;
-  color: #ccc; 
+  color: var(--text-secondary); 
   transition: color 0.2s;
 }
 
 .remove-tag:hover {
-  color: #fff;
+  color: var(--text-primary);
 }
 
 /* === CHARACTER COUNTERS === */
 .input-with-counter input,
 .input-with-counter textarea {
-  background: #333333;
-  border: 1px solid #4a4a4a;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
 }
 
 .char-counter {
@@ -218,13 +205,13 @@ textarea {
   bottom: 8px;
   right: 12px;
   font-size: 13px;
-  color: #b0b0b0; 
+  color: var(--text-secondary); 
   pointer-events: none;
 }
 
 /* Focus outline */
 .input-with-counter input:focus,
 .input-with-counter textarea:focus {
-  outline: 1px solid #007bff; 
-  border-color: #007bff;
+  outline: 1px solid var(--action-btn); 
+  border-color: var(--action-btn);
 }
