@@ -3,8 +3,8 @@
   display: flex;
   height: 100vh;
   width: 100%;
-  background: #1e1e1e; 
-  color: #e0e0e0; 
+  background: var(--bg-primary); 
+  color: var(--text-primary); 
 }
 
 .chat-panel {
@@ -32,8 +32,8 @@
 
 /* === AGENT HEADER CARD === */
 .agent-header {
-  background: #252525; 
-  border: 1px solid #3a3a3a; 
+  background: var(--bg-secondary); 
+  border: 1px solid var(--border-color); 
   padding: 20px;
   border-radius: 12px;
   display: flex;
@@ -42,11 +42,11 @@
 }
 
 .back-btn {
-  background: #333333; 
+  background: var(--bg-input); 
   border: none;
   padding: 10px;
   border-radius: 8px;
-  color: #ffffff;
+  color: var(--text-primary);
   cursor: pointer;
 }
 
@@ -59,7 +59,7 @@
 .agent-avatar {
   width: 60px;
   height: 60px;
-  background: #3a3a3a; 
+  background: var(--border-color); 
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -74,15 +74,15 @@
 
 .agent-meta p {
   margin: 0;
-  color: #cccccc; 
+  color: var(--text-secondary); 
 }
 
 .agent-header-actions button {
-  background: #333333; 
+  background: var(--bg-input); 
   padding: 10px 14px;
   border-radius: 8px;
-  color: #ffffff;
-  border: 1px solid #4a4a4a; 
+  color: var(--text-primary);
+  border: 1px solid var(--border-color); 
   cursor: pointer;
   margin-left: 10px;
 }
@@ -92,12 +92,12 @@
   font-size: 34px;
   font-weight: 700;
   line-height: 1.4;
-  color: #ffffff; 
+  color: var(--text-primary); 
 }
 
 /* === INPUT AREA === */
 .input-box {
-  background: #ffffff; 
+  background: var(--bg-input); 
   border-radius: 14px;
   display: flex;
   align-items: center;
@@ -111,11 +111,11 @@
   border: none;
   outline: none;
   font-size: 16px;
-  color: #111111; 
+  color: var(--text-primary); 
 }
 
 .send-btn {
-  background: #007bff; 
+  background: var(--action-btn); 
   border: none;
   padding: 10px 14px;
   border-radius: 10px;
@@ -124,6 +124,6 @@
 }
 
 .input-icon {
-  color: #333333; 
+  color: var(--text-secondary); 
   opacity: 1; 
 }

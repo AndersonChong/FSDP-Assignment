@@ -1,13 +1,48 @@
-/* === GLOBAL APP STYLES === */
+/* === GLOBAL APP STYLES (Theme Variables) === */
+:root {
+  /* --- DARK THEME (Default) --- */
+  --bg-primary: #1e1e1e;
+  --bg-secondary: #252525;
+  --bg-input: #333333;
+  
+  --text-primary: #e0e0e0;
+  --text-secondary: #c0c0c0;
+  --text-inverted: #111;
+  
+  --border-color: #3a3a3a;
+  --action-btn: #007bff;
+  --shadow-color: rgba(0, 0, 0, 0.15);
+}
+
+/* --- LIGHT MODE OVERRIDE --- */
+body.light-mode {
+  --bg-primary: #f7f7f7;
+  --bg-secondary: #ffffff;
+  --bg-input: #eeeeee;
+  
+  --text-primary: #333333;
+  --text-secondary: #555555;
+  --text-inverted: #e0e0e0;
+  
+  --border-color: #e0e0e0;
+  --shadow-color: rgba(0, 0, 0, 0.08);
+}
+
+
+/* === HTML & BODY (Apply Variables) === */
 html, body {
   margin: 0;
   padding: 0;
   height: 100%;
   width: 100%;
   font-family: "Inter", sans-serif;
-  background: #1e1e1e; 
-  color: #e0e0e0; 
+  
+  /* Apply variables for consistent look */
+  background: var(--bg-primary); 
+  color: var(--text-primary); 
+  
   overflow-x: hidden;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
 /* === ROOT CONTAINER === */
@@ -27,9 +62,19 @@ input {
   font-family: inherit;
 }
 
+/* ADDED: Global focus style for accessibility */
+*:focus {
+    outline: 2px solid var(--action-btn);
+    outline-offset: 2px;
+}
+
 /* === UTILITY CLASSES === */
 .center {
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+.logo {
+  filter: brightness(0) saturate(100%) invert(53%) sepia(14%) saturate(2690%) hue-rotate(175deg) brightness(102%) contrast(88%);
 }
