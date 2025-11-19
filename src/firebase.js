@@ -1,22 +1,18 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
-import { getStorage, connectStorageEmulator } from "firebase/storage";
+import { getFirestore } from "firebase/firestore";
+
 
 const firebaseConfig = {
-  apiKey: "dummy",
-  authDomain: "localhost",
+  apiKey: "YOUR_REAL_API_KEY",
+  authDomain: "ai-agent-platform-grp28.firebaseapp.com",
   projectId: "ai-agent-platform-grp28",
-  storageBucket: "dummy.appspot.com",
-  messagingSenderId: "dummy",
-  appId: "dummy"
+  storageBucket: "ai-agent-platform-grp28.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
 };
 
 const app = initializeApp(firebaseConfig);
 
 const db = getFirestore(app);
-connectFirestoreEmulator(db, "localhost", 8080);
 
-const storage = getStorage(app);
-connectStorageEmulator(storage, "localhost", 9199);
-
-export { db, storage };
+export { db };
