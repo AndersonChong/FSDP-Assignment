@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Sidebar from "../components/SideBar";
 import "../styles/chatinterface.css";
 import { FiArrowLeft, FiEdit2, FiSend, FiUpload, FiMic } from "react-icons/fi";
 import { useParams, useNavigate } from "react-router-dom";
 import logo from '../assets/Flying Bot Logo.png';
+import ReactMarkdown from "react-markdown";
+
 
 import { db } from "../firebase";
 import { doc, getDoc } from "firebase/firestore";
@@ -18,6 +20,23 @@ export default function ChatInterface() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(true);
+
+  const normalizeMessage = (text) => {
+  const bulletCount = (text.match(/^[-*•]\s/gm) || []).length;
+
+  if (bulletCount > 3) {
+    return text.replace(/^[-*•]\s+/gm, "");
+  }
+
+  return text;
+};
+
+
+  const messagesEndRef = useRef(null);
+
+    useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   // Fetch agent metadata from Firestore
   useEffect(() => {
@@ -118,9 +137,12 @@ export default function ChatInterface() {
               key={idx}
               className={`message ${msg.sender === "user" ? "user" : "bot"}`}
             >
-              {msg.text}
+              <ReactMarkdown>
+                {normalizeMessage(msg.text)}
+              </ReactMarkdown>
             </div>
           ))}
+          <div ref={messagesEndRef} />
         </div>
 
         {/* === INPUT BOX === */}
