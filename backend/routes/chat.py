@@ -2,73 +2,76 @@ from fastapi import APIRouter, HTTPException, Response
 from backend.models import ChatRequest
 from backend import db
 import os
-import openai
+import asyncio
 from dotenv import load_dotenv
+from openai import OpenAI
 
-load_dotenv()  # Load OPENAI_API_KEY from .env
+load_dotenv()
 
 router = APIRouter()
-openai.api_key = os.getenv("OPENAI_API_KEY")
 
+client = OpenAI(
+    api_key=os.getenv("OPENAI_API_KEY"),
+    timeout=10
+)
 
-# ===== HELPER =====
 def build_system_prompt(agent: dict) -> str:
-    specialties = ", ".join(agent.get("specialties", [])) or "general knowledge"
-    guidelines = agent.get("guidelines", "")
-    return f"""
-You are {agent.get('name')} — Role: {agent.get('role')}.
-Persona / guidelines: {guidelines}
-Specialties: {specialties}
+    return (
+        f"You are {agent.get('name')}.\n"
+        f"Role: {agent.get('role')}.\n"
+        f"Persona: {agent.get('persona')}\n"
+        f"Specialties: {', '.join(agent.get('specialties', []))}"
+    )
 
-Always follow the persona and role above.
-If asked something outside your specialties, politely say you can only discuss your specialty.
-"""
-
-
-# ===== CORS PRE-FLIGHT =====
 @router.options("/query")
 async def chat_options():
     return Response(status_code=200)
 
+def get_agent_sync(agent_id: str):
+    return db.get_agent_by_id(agent_id)
 
-# ===== CHAT ENDPOINT =====
+def call_openai_sync(messages):
+    response = client.chat.completions.create(
+        model="gpt-4.1-mini",
+        messages=messages,
+        temperature=0.7,
+        max_tokens=250,
+    )
+    return response.choices[0].message.content
+
 @router.post("/query")
 async def chat(req: ChatRequest):
+    print("Chat endpoint hit")
+    print("Incoming request:", req.agent_id, req.user_message)
+
     try:
-        # Fetch agent from DB
-        agent = db.get_agent_by_id(req.agent_id)
-        if not agent:
-            raise HTTPException(status_code=404, detail="Agent not found")
+        agent = await asyncio.to_thread(get_agent_sync, req.agent_id)
+    except Exception as e:
+        print("Firestore error:", e)
+        raise HTTPException(status_code=500, detail="Firestore error")
 
-        # Ensure OpenAI API key is loaded
-        if not openai.api_key:
-            raise HTTPException(
-                status_code=500,
-                detail="OpenAI API key missing. Set OPENAI_API_KEY in .env."
-            )
+    print("Agent fetched:", agent)
 
-        # Build messages for OpenAI ChatCompletion
-        messages = [
-            {"role": "system", "content": build_system_prompt(agent)},
-            {"role": "user", "content": req.user_message},
-        ]
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
 
-        client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    messages = [
+        {"role": "system", "content": build_system_prompt(agent)},
+        {"role": "user", "content": req.user_message},
+    ]
 
-        resp = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": build_system_prompt(agent)},
-                {"role": "user", "content": req.user_message},
-            ],
-            max_tokens=512,
-            temperature=0.7,
+    try:
+        reply = await asyncio.wait_for(
+            asyncio.to_thread(call_openai_sync, messages),
+            timeout=8
         )
-        answer = resp.choices[0].message.content
+        print("OpenAI replied")
+        return {"reply": reply}
 
-        return {"reply": answer}
+    except asyncio.TimeoutError:
+        return {"reply": "AI response timed out. Please try again."}
 
     except Exception as e:
-        # Print full error to terminal for debugging
-        print("Error in /agent/query:", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        print("OpenAI error:", e)
+        return {"reply": "AI service error."}
+
