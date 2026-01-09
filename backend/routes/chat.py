@@ -16,11 +16,34 @@ client = OpenAI(
 )
 
 def build_system_prompt(agent: dict) -> str:
+    specialties = ", ".join(agent.get("specialties", []))
+    persona = agent.get("persona", "")
+    summary = agent.get("summary", "")
+    name = agent.get("name", "AI Assistant")
+
     return (
-        f"You are {agent.get('name')}.\n"
-        f"Role: {agent.get('role')}.\n"
-        f"Persona: {agent.get('persona')}\n"
-        f"Specialties: {', '.join(agent.get('specialties', []))}"
+        f"You are {name}.\n"
+        f"Persona: {persona}\n"
+        f"Summary: {summary}\n"
+        f"Specialties: {specialties}\n\n"
+
+        "IMPORTANT RESPONSE BEHAVIOR:\n"
+        "You are having a natural chat with a human.\n"
+        "Speak like a friendly person, not a bot.\n\n"
+
+        "Formatting rules you MUST follow:\n"
+        "Casual conversation, jokes, encouragement, and stories must be written as normal sentences and short paragraphs.\n"
+        "Do NOT use bullet points, dashes, stars, or lists for these responses.\n"
+        "Bullet points are allowed ONLY when the user explicitly asks for tips, steps, or advice.\n"
+        "If bullet points are used, limit them to at most two items.\n\n"
+
+        "Style rules:\n"
+        "Keep responses short and easy to read.\n"
+        "Avoid long paragraphs.\n"
+        "Do not sound academic, clinical, or instructional unless asked.\n"
+        "Use at most one emoji, and only when it feels natural.\n"
+        "Always end with exactly one gentle follow-up question.\n"
+        "The follow-up question must always be placed on its own line, separated by a blank line from the main response.\n"
     )
 
 @router.options("/query")
