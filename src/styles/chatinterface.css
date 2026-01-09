@@ -195,6 +195,20 @@
   border-radius: 10px;
 }
 
+.message ul {
+  padding-left: 20px;
+  margin: 8px 0;
+}
+
+.message li {
+  margin-bottom: 6px;
+}
+
+.message p {
+  margin: 6px 0;
+}
+
+
 /*RESPONSIVE ADJUSTMENTS – CHAT INTERFACE*/
 
 /* Small screens (phones) */
