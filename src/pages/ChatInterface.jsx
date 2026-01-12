@@ -8,7 +8,14 @@ import ReactMarkdown from "react-markdown";
 
 
 import { db } from "../firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { 
+  doc, 
+  getDoc, 
+  updateDoc, 
+  serverTimestamp, 
+  collection, 
+  addDoc 
+} from "firebase/firestore";
 import { queryAgent } from "../api"; // <-- backend chat call
 
 export default function ChatInterface() {
@@ -47,6 +54,10 @@ export default function ChatInterface() {
           const data = snap.data();
           setAgent(data);
 
+          await updateDoc(doc(db, "agents", agentId), {
+            lastUsedAt: serverTimestamp(),
+          });
+
           // Initial greeting message from bot
           setMessages([
             {
@@ -76,6 +87,13 @@ export default function ChatInterface() {
 
     // Show user's message in chat
     setMessages((prev) => [...prev, { sender: "user", text: userMessage }]);
+
+    //  AUTO-SAVE USER QUESTION
+  await addDoc(collection(db, "messages"), {
+    agentId,
+    sender: "user",
+    createdAt: serverTimestamp(),
+  });
 
     try {
       // Send message + agentId to backend
