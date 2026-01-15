@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import Sidebar from "../components/SideBar";
-import FeedbackPanel from "../components/FeedbackPanel";
-import ResponseSaver from "../components/ResponseSaver";
 import KnowledgeBase from "../components/KnowledgeBase";
 import AgentChaining from "../components/AgentChaining";
 import "../styles/chatinterface.css";
@@ -10,12 +8,10 @@ import {
   FiEdit2,
   FiSend,
   FiUpload,
-  FiMic,
   FiThumbsUp,
   FiThumbsDown
 } from "react-icons/fi";
 import { useParams, useNavigate } from "react-router-dom";
-import logo from '../assets/Flying Bot Logo.png';
 import ReactMarkdown from "react-markdown";
 
 
@@ -36,12 +32,16 @@ import { queryAgent } from "../api"; // <-- backend chat call
 export default function ChatInterface() {
   const { agentId } = useParams();
   const navigate = useNavigate();
-  const handleLogoClick = () => navigate("/");
 
   const [agent, setAgent] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(true);
+  const [showKB, setShowKB] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [filePreview, setFilePreview] = useState(null);
+  const [sessionId, setSessionId] = useState(() => `session_${Date.now()}`);
+  const messagesEndRef = useRef(null);
 
   // Fetch agent metadata from Firestore
   useEffect(() => {
@@ -59,6 +59,7 @@ export default function ChatInterface() {
           // Initial greeting message from bot
           setMessages([
             {
+              id: `greeting_${Date.now()}`,
               sender: "bot",
               text: `Hi User, I am ${data.name}. How can I help you today?`,
             },
@@ -101,6 +102,13 @@ export default function ChatInterface() {
   };
 };
 
+  const getFileIcon = (fileType) => {
+    if (fileType.startsWith("image/")) return "🖼️";
+    if (fileType.startsWith("video/")) return "🎥";
+    if (fileType === "application/pdf") return "📄";
+    return "📎";
+  };
+
   // Send message to backend and get AI response
   const sendMessage = async () => {
     if (!input.trim() && !selectedFile) return;
@@ -140,7 +148,7 @@ export default function ChatInterface() {
       });
 
       // Append AI response
-      setMessages((prev) => [...prev, {id:aiDocRef.id, sender: "bot", text: res.reply }]);
+      setMessages((prev) => [...prev, {id:aiDocRef.id, sender: "bot", text: res.reply, messageId: aiDocRef.id}]);
     } catch (err) {
       console.error("Error sending message:", err);
       setMessages((prev) => [
@@ -320,10 +328,13 @@ function MessageBubble({ msg, submitFeedback, hasFeedback }) {
   const [rated, setRated] = useState(false);
 
   useEffect(() => {
-    if (msg.id) {
-      hasFeedback(msg.id).then(setRated);
+    if (msg.id && msg.sender === "bot") {
+      hasFeedback(msg.id).then(setRated).catch(() => setRated(false));
     }
-  }, [msg.id]);
+  }, [msg.id, msg.sender, hasFeedback]);
+
+  // Show feedback buttons for all bot messages with ID that haven't been rated
+  const canShowFeedback = msg.sender === "bot" && msg.id && !rated;
 
   return (
     <div className={`message ${msg.sender === "user" ? "user" : "bot"}`}>
@@ -358,7 +369,7 @@ function MessageBubble({ msg, submitFeedback, hasFeedback }) {
       )}
 
       {/*FEEDBACK (AI ONLY)*/}
-      {msg.sender === "bot" && msg.id && !rated && (
+      {canShowFeedback && !rated && (
         <div className="feedback">
           <button
             className="feedback-btn"
@@ -368,7 +379,7 @@ function MessageBubble({ msg, submitFeedback, hasFeedback }) {
               setRated(true);
             }}
           >
-            <FiThumbsUp />
+            <FiThumbsUp size={16} />
           </button>
 
           <button
@@ -379,7 +390,7 @@ function MessageBubble({ msg, submitFeedback, hasFeedback }) {
               setRated(true);
             }}
           >
-            <FiThumbsDown />
+            <FiThumbsDown size={16} />
           </button>
         </div>
       )}
