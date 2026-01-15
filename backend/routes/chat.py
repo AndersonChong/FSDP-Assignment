@@ -2,12 +2,11 @@ from fastapi import APIRouter, HTTPException
 import db
 import os
 import openai
+from openai import OpenAI
 from models import ChatRequest
 from dotenv import load_dotenv
 
 load_dotenv()
-router = APIRouter()
-
 router = APIRouter()
 
 client = OpenAI(
