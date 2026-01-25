@@ -357,6 +357,34 @@
   max-width: 240px;
 }
 
+.agent-suggestion {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  padding: 12px 16px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+
+.agent-suggestion p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 4px 0 8px;
+}
+
+.agent-suggestion button {
+  margin-right: 8px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+}
+
+.ignore-btn {
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+
 /*RESPONSIVE ADJUSTMENTS – CHAT INTERFACE*/
 
 /* Small screens (phones) */
