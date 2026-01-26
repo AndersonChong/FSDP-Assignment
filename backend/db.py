@@ -1,7 +1,7 @@
 # backend/db.py
 from typing import Optional, List, Dict
 from datetime import datetime
-from firebase_admin_init import db
+from .firebase_admin_init import db
 
 COLLECTION_AGENTS = "agents"
 COLLECTION_FEEDBACK = "feedback"
@@ -21,18 +21,24 @@ def create_agent_doc(doc: Dict):
     db.collection(COLLECTION_AGENTS).document(agent_id).set(doc)
 
 def get_agent_by_id(agent_id: str) -> Optional[Dict]:
-    """
-    Retrieve an agent by its Firestore document ID.
-    """
     snap = db.collection(COLLECTION_AGENTS).document(agent_id).get()
-    return snap.to_dict() if snap.exists else None
+    if not snap.exists:
+        return None
+
+    data = snap.to_dict()
+    data["id"] = snap.id  # 🔥 REQUIRED
+    return data
 
 def list_agents() -> List[Dict]:
-    """
-    List all agents in the Firestore collection.
-    """
     docs = db.collection(COLLECTION_AGENTS).stream()
-    return [d.to_dict() for d in docs]
+    agents = []
+
+    for d in docs:
+        data = d.to_dict()
+        data["id"] = d.id 
+        agents.append(data)
+
+    return agents
 
 # ===== FEEDBACK FUNCTIONS =====
 

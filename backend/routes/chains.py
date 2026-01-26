@@ -1,14 +1,14 @@
 from fastapi import APIRouter, HTTPException
-from models import AgentChainRequest
-import db
-import openai
+from ..models import AgentChainRequest, AgentLinkRequest
+from .. import db
+from openai import OpenAI
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
 router = APIRouter()
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 def build_system_prompt(agent: dict) -> str:
     """Build system prompt for agent (copied from chat.py)."""
@@ -24,49 +24,42 @@ If asked something outside your specialties, politely say you can only discuss y
 """
 
 def query_agent_openai(agent: dict, user_message: str) -> str:
-    """Query an agent via OpenAI API."""
-    if not openai.api_key:
-        raise HTTPException(status_code=500, detail="OpenAI API key missing")
-    
     messages = [
         {"role": "system", "content": build_system_prompt(agent)},
         {"role": "user", "content": user_message},
     ]
-    
+
     try:
-        resp = openai.ChatCompletion.create(
+        resp = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=messages,
             max_tokens=512,
-            temperature=0.7
+            temperature=0.7,
         )
-        return resp["choices"][0]["message"]["content"]
+        return resp.choices[0].message.content
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"OpenAI error: {str(e)}")
 
+
 @router.post("/link")
-async def create_agent_link(primary_agent_id: str, secondary_agent_id: str):
-    """
-    Create a link between two agents for chaining.
-    """
-    try:
-        # Verify both agents exist
-        primary = db.get_agent_by_id(primary_agent_id)
-        secondary = db.get_agent_by_id(secondary_agent_id)
-        
-        if not primary or not secondary:
-            raise HTTPException(status_code=404, detail="One or both agents not found")
-        
-        chain_id = db.create_agent_chain(primary_agent_id, secondary_agent_id)
-        return {
-            "status": "success",
-            "chain_id": chain_id,
-            "primary_agent": primary.get("name"),
-            "secondary_agent": secondary.get("name"),
-            "message": "Agents linked successfully"
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+async def create_agent_link(req: AgentLinkRequest):
+    primary_agent_id = req.primary_agent_id
+    secondary_agent_id = req.secondary_agent_id
+
+    primary = db.get_agent_by_id(primary_agent_id)
+    secondary = db.get_agent_by_id(secondary_agent_id)
+
+    if not primary or not secondary:
+        raise HTTPException(status_code=404, detail="One or both agents not found")
+
+    chain_id = db.create_agent_chain(primary_agent_id, secondary_agent_id)
+
+    return {
+        "status": "success",
+        "chain_id": chain_id,
+        "primary_agent": primary.get("name"),
+        "secondary_agent": secondary.get("name"),
+    }
 
 @router.post("/query")
 async def query_agent_chain(req: AgentChainRequest):
