@@ -14,6 +14,7 @@ class AgentCreateRequest(BaseModel):
 class ChatRequest(BaseModel):
     agent_id: str
     user_message: str
+    image_base64: Optional[str] = None
 
 # === FEEDBACK SYSTEM ===
 class FeedbackType(str, Enum):
@@ -57,6 +58,9 @@ class SaveResponseRequest(BaseModel):
     tags: Optional[List[str]] = []
 
 # === MULTI-BOT LINKING ===
+class AgentLinkRequest(BaseModel):
+    primary_agent_id: str
+    secondary_agent_id: str
 class AgentChainRequest(BaseModel):
     primary_agent_id: str
     secondary_agent_id: str

@@ -29,18 +29,20 @@ export async function listAgents() {
   return res.json();
 }
 
-export async function queryAgent(agentId, query) {
-  const res = await fetch(`${API_BASE_URL}/chat`, {
+export async function queryAgent(agentId, message) {
+  return fetch("http://localhost:8000/chat/query", {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
-      "x-api-key": API_KEY,
+      "Content-Type": "application/json"
     },
-    body: JSON.stringify({ agent_id: agentId, user_message: query }),
+    body: JSON.stringify({
+      agent_id: agentId,
+      user_message: message
+    })
+  }).then(res => {
+    if (!res.ok) throw new Error("Query failed");
+    return res.json();
   });
-
-  if (!res.ok) throw new Error("Query failed");
-  return res.json();
 }
 
 // ===== FEEDBACK ENDPOINTS =====
@@ -220,7 +222,7 @@ export async function getSavedResponses(agentId, tags = null) {
 
 // ===== MULTI-BOT LINKING ENDPOINTS =====
 export async function linkAgents(primaryAgentId, secondaryAgentId) {
-  const res = await fetch(`${API_BASE_URL}/chains/link`, {
+  return fetch(`${API_BASE_URL}/chains/link`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -231,12 +233,14 @@ export async function linkAgents(primaryAgentId, secondaryAgentId) {
       secondary_agent_id: secondaryAgentId,
     }),
   });
-
-  if (!res.ok) throw new Error("Failed to link agents");
-  return res.json();
 }
 
-export async function queryAgentChain(primaryAgentId, secondaryAgentId, userMessage, passContext = true) {
+export async function queryAgentChain(
+  primaryAgentId,
+  secondaryAgentId,
+  userMessage,
+  passContext = true
+) {
   const res = await fetch(`${API_BASE_URL}/chains/query`, {
     method: "POST",
     headers: {
@@ -251,7 +255,11 @@ export async function queryAgentChain(primaryAgentId, secondaryAgentId, userMess
     }),
   });
 
-  if (!res.ok) throw new Error("Failed to query agent chain");
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(err || "Failed to query agent chain");
+  }
+
   return res.json();
 }
 

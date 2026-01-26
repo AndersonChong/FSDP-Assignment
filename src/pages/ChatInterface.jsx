@@ -29,6 +29,30 @@ import {
 } from "firebase/firestore";
 import { queryAgent } from "../api"; // <-- backend chat call
 
+// Auto-suggest agent based on user message
+function suggestAgentFromMessage(message, agents) {
+  if (!message || agents.length === 0) return null;
+
+  const text = message.toLowerCase();
+
+  for (const agent of agents) {
+    if (!agent.specialties) continue;
+
+    for (const keyword of agent.specialties) {
+      if (text.includes(keyword.toLowerCase())) {
+        return {
+          agentId: agent.id,
+          label: agent.name,
+          reason: `This matches the agent's specialty: ${keyword}`
+        };
+      }
+    }
+  }
+
+  return null;
+}
+
+
 export default function ChatInterface() {
   const { agentId } = useParams();
   const navigate = useNavigate();
@@ -37,7 +61,12 @@ export default function ChatInterface() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(true);
-  const [showKB, setShowKB] = useState(false);
+
+  const [allAgents, setAllAgents] = useState([]);
+  const [agentSuggestion, setAgentSuggestion] = useState(null);
+
+    const [showKB, setShowKB] = useState(false);
+
   const [selectedFile, setSelectedFile] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
   const [sessionId, setSessionId] = useState(() => `session_${Date.now()}`);
@@ -76,6 +105,18 @@ export default function ChatInterface() {
 
     loadAgent();
   }, [agentId]);
+
+    useEffect(() => {
+  async function loadAgentsForSuggestion() {
+    const snap = await getDocs(collection(db, "agents"));
+    const list = snap.docs
+      .map((doc) => ({ id: doc.id, ...doc.data() }))
+      .filter((a) => a.isActive !== false);
+    setAllAgents(list);
+  }
+
+  loadAgentsForSuggestion();
+  }, []);
 
   const fileToBase64 = (file) =>
   new Promise((resolve, reject) => {
@@ -187,7 +228,7 @@ export default function ChatInterface() {
       <div className="chat-panel">
         {/* === AGENT HEADER === */}
         <div className="agent-header">
-          <button className="back-btn" onClick={() => navigate(-1)}>
+          <button className="back-btn" onClick={() => navigate("/view-agents")}>
             <FiArrowLeft size={20} />
           </button>
 
@@ -245,6 +286,36 @@ export default function ChatInterface() {
 
         {/* === INPUT BOX === */}
         <div className="input-area">
+
+        {agentSuggestion && (
+            <div className="agent-suggestion">
+              <span>
+                💡 <strong>Suggested Agent:</strong> {agentSuggestion.label}
+              </span>
+
+              <p className="suggestion-reason">
+                {agentSuggestion.reason}
+              </p>
+
+              <button
+                onClick={() => {
+                  // navigate to a different agent
+                  // (replace these IDs with your real agent IDs)
+                  navigate(`/agent-chat/${agentSuggestion.agentId}`);
+                  setAgentSuggestion(null);
+                }}
+              >
+                Use {agentSuggestion.label}
+              </button>
+
+              <button
+                className="ignore-btn"
+                onClick={() => setAgentSuggestion(null)}
+              >
+                Ignore
+              </button>
+            </div>
+          )}
 
         {selectedFile && (
           <div className="file-preview-card">
@@ -309,7 +380,13 @@ export default function ChatInterface() {
               type="text"
               placeholder="Type your message..."
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                setInput(value);
+
+                const suggestion = suggestAgentFromMessage(value, allAgents);
+                setAgentSuggestion(suggestion);
+              }}
               onKeyDown={(e) => e.key === "Enter" && sendMessage()}
             />
 

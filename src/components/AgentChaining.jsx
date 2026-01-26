@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { FiLink2, FiSend, FiChevronDown } from "react-icons/fi";
-import { listAgents, queryAgentChain } from "../api";
+import { listAgents, queryAgentChain, linkAgents  } from "../api";
 import "../styles/agentchaining.css";
 
 export default function AgentChaining({ primaryAgentId }) {
@@ -27,14 +27,25 @@ export default function AgentChaining({ primaryAgentId }) {
     }
   };
 
-  const selectAgent = (agent) => {
-    console.log("Agent selected for chaining:", agent.name);
+const selectAgent = async (agent) => {
+  try {
+    console.log("Linking agents:", primaryAgentId, agent.id);
+
+
+    await linkAgents(primaryAgentId, agent.id);
+
+    console.log("Agents linked successfully");
+
     setSelectedAgent(agent);
     setShowDropdown(false);
     setShowChainChat(true);
     setChainMessages([]);
     setChainInput("");
-  };
+  } catch (err) {
+    console.error("Failed to link agents:", err);
+    alert("Failed to link agents. Check backend logs.");
+  }
+};
 
   const handleChainQuery = async () => {
     if (!chainInput.trim() || !selectedAgent) return;
@@ -68,8 +79,17 @@ export default function AgentChaining({ primaryAgentId }) {
         ...prev,
         {
           sender: "chain",
-          text: res.response,
-          agentResponses: res.agent_responses,
+          text: res.combined_response,
+          agentResponses: [
+            {
+              agent_name: res.primary_agent.name,
+              response: res.primary_agent.response,
+            },
+            {
+              agent_name: res.secondary_agent.name,
+              response: res.secondary_agent.response,
+            },
+          ],
         },
       ]);
     } catch (err) {
@@ -111,7 +131,7 @@ export default function AgentChaining({ primaryAgentId }) {
                 {msg.agentResponses && (
                   <div className="agent-responses-mini">
                     {msg.agentResponses.map((resp, i) => (
-                      <div key={i} className="agent-resp-mini">
+                      <div key={resp.agent_name} className="agent-resp-mini">
                         <strong>{resp.agent_name}:</strong>
                         <p>{resp.response}</p>
                       </div>

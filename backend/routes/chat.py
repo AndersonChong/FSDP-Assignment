@@ -1,10 +1,12 @@
 from fastapi import APIRouter, HTTPException
-import db
+from .. import db
 import os
 import openai
 from openai import OpenAI
-from models import ChatRequest
+from ..models import ChatRequest
 from dotenv import load_dotenv
+import asyncio
+from fastapi import Response
 
 load_dotenv()
 router = APIRouter()
@@ -49,10 +51,6 @@ def build_system_prompt(agent: dict) -> str:
         "- Identify the drink or ingredients shown.\n"
         "- Describe what you see before giving advice.\n\n"
     )
-
-@router.options("/query")
-async def chat_options():
-    return Response(status_code=200)
 
 def get_agent_sync(agent_id: str):
     return db.get_agent_by_id(agent_id)
