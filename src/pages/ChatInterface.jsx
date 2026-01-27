@@ -13,6 +13,7 @@ import {
 } from "react-icons/fi";
 import { useParams, useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 
 import { db } from "../firebase";
@@ -27,31 +28,47 @@ import {
   where,
   getDocs,
 } from "firebase/firestore";
-import { queryAgent } from "../api"; // <-- backend chat call
+import { queryAgent, queryAgentChain } from "../api"; // <-- backend chat call
 
 // Auto-suggest agent based on user message
-function suggestAgentFromMessage(message, agents) {
-  if (!message || agents.length === 0) return null;
+function suggestAgentsFromMessage(message, agents, currentAgentId) {
+  if (!message || agents.length === 0) return [];
 
   const text = message.toLowerCase();
 
+  // Track which specialties are already covered
+  const matchedSpecialties = new Set();
+  const suggestions = [];
+
   for (const agent of agents) {
+    // Never suggest current agent
+    if (agent.id === currentAgentId) continue;
     if (!agent.specialties) continue;
 
-    for (const keyword of agent.specialties) {
-      if (text.includes(keyword.toLowerCase())) {
-        return {
+    for (const rawKeyword of agent.specialties) {
+      const keyword = rawKeyword.toLowerCase();
+
+      // keyword appears in message AND not already suggested
+      if (
+        text.includes(keyword) &&
+        !matchedSpecialties.has(keyword)
+      ) {
+        matchedSpecialties.add(keyword);
+
+        suggestions.push({
           agentId: agent.id,
           label: agent.name,
-          reason: `This matches the agent's specialty: ${keyword}`
-        };
+          reason: `Matches: ${keyword}`
+        });
+
+        // move to next agent after first specialty match
+        break;
       }
     }
   }
 
-  return null;
+  return suggestions;
 }
-
 
 export default function ChatInterface() {
   const { agentId } = useParams();
@@ -63,14 +80,18 @@ export default function ChatInterface() {
   const [loading, setLoading] = useState(true);
 
   const [allAgents, setAllAgents] = useState([]);
-  const [agentSuggestion, setAgentSuggestion] = useState(null);
+  const [agentSuggestions, setAgentSuggestions] = useState([]);
 
-    const [showKB, setShowKB] = useState(false);
+  const [showKB, setShowKB] = useState(false);
 
   const [selectedFile, setSelectedFile] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
   const [sessionId, setSessionId] = useState(() => `session_${Date.now()}`);
   const messagesEndRef = useRef(null);
+
+  const [chainMode, setChainMode] = useState(false);
+  const [secondaryAgent, setSecondaryAgent] = useState(null);
+
 
   // Fetch agent metadata from Firestore
   useEffect(() => {
@@ -118,6 +139,12 @@ export default function ChatInterface() {
   loadAgentsForSuggestion();
   }, []);
 
+  useEffect(() => {
+  messagesEndRef.current?.scrollIntoView({
+    behavior: "smooth",
+  });
+}, [messages]);
+
   const fileToBase64 = (file) =>
   new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -151,22 +178,24 @@ export default function ChatInterface() {
   };
 
   // Send message to backend and get AI response
-  const sendMessage = async () => {
-    if (!input.trim() && !selectedFile) return;
+const sendMessage = async () => {
+  if (!input.trim() && !selectedFile) return;
 
-    const userMessage = input;
-    setInput("");
-      let fileData = null;
+  const userMessage = input;
+  setInput("");
 
-    if (selectedFile) {
-      fileData = await prepareFileForFirestore(selectedFile);
-      setSelectedFile(null);
-      setFilePreview(null);
-    }
-    // Show user's message in chat
-    setMessages((prev) => [...prev, { sender: "user", text: userMessage, file: fileData}]);
+  let fileData = null;
+  if (selectedFile) {
+    fileData = await prepareFileForFirestore(selectedFile);
+    setSelectedFile(null);
+    setFilePreview(null);
+  }
 
-    //  AUTO-SAVE USER QUESTION
+  setMessages((prev) => [
+    ...prev,
+    { sender: "user", text: userMessage, file: fileData }
+  ]);
+
   await addDoc(collection(db, "messages"), {
     agentId,
     sender: "user",
@@ -176,28 +205,59 @@ export default function ChatInterface() {
     createdAt: serverTimestamp(),
   });
 
-    try {
-      // Send message + agentId to backend
-      const res = await queryAgent(agentId, userMessage, fileData?.base64 ? fileData.base64 : null);
+try {
+  let res;
 
-      const aiDocRef = await addDoc(collection(db, "messages"), {
-        agentId,
-        sender: "ai",
-        sessionId,
-        text: res.reply,
-        createdAt: serverTimestamp(),
-      });
+  if (chainMode && secondaryAgent) {
+    res = await queryAgentChain(
+      agentId,
+      secondaryAgent.id,
+      userMessage,
+      true
+    );
+  } else {
+    res = await queryAgent(
+      agentId,
+      userMessage,
+      fileData?.base64 || null
+    );
+  }
 
-      // Append AI response
-      setMessages((prev) => [...prev, {id:aiDocRef.id, sender: "bot", text: res.reply, messageId: aiDocRef.id}]);
-    } catch (err) {
-      console.error("Error sending message:", err);
-      setMessages((prev) => [
-        ...prev,
-        { sender: "bot", text: "Sorry, something went wrong." },
-      ]);
-    }
-  };
+  const aiText = res.reply;
+
+  if (!aiText) {
+    throw new Error("AI text is empty");
+  }
+
+  const aiDocRef = await addDoc(collection(db, "messages"), {
+    agentId,
+    sender: "ai",
+    sessionId,
+    text: aiText,
+    createdAt: serverTimestamp(),
+  });
+
+  setMessages((prev) => [
+    ...prev,
+    {
+      id: aiDocRef.id,
+      sender: "bot",
+      text: aiText,
+      messageId: aiDocRef.id,
+    },
+  ]);
+} catch (err) {
+  console.error("Error sending message:", err);
+  setMessages((prev) => [
+    ...prev,
+    {
+      sender: "bot",
+      text: "Sorry, something went wrong.",
+    },
+  ]);
+}
+};
+
 
     const submitFeedback = async (messageId, satisfied) => {
     await addDoc(collection(db, "feedback"), {
@@ -261,7 +321,14 @@ export default function ChatInterface() {
             >
               📚 KB
             </button>
-            <AgentChaining primaryAgentId={agentId} />
+            {/* <AgentChaining primaryAgentId={agentId} /> */}
+            <AgentChaining
+              primaryAgentId={agentId}
+              onChainSelected={({ enabled, secondaryAgent }) => {
+                setChainMode(enabled);
+                setSecondaryAgent(secondaryAgent);
+              }}
+            />
             <button className="chat-btn">
               <FiSend size={18} /> Chat
             </button>
@@ -286,34 +353,73 @@ export default function ChatInterface() {
 
         {/* === INPUT BOX === */}
         <div className="input-area">
-
-        {agentSuggestion && (
-            <div className="agent-suggestion">
-              <span>
-                💡 <strong>Suggested Agent:</strong> {agentSuggestion.label}
+        
+          {/* 🔗 CHAIN MODE INDICATOR */}
+          {chainMode && secondaryAgent && (
+            <div className="chain-pill">
+              <span className="chain-icon">🔗</span>
+              <span className="chain-text">
+                Chaining with <strong>{secondaryAgent.name}</strong>
               </span>
-
-              <p className="suggestion-reason">
-                {agentSuggestion.reason}
-              </p>
-
               <button
+                className="chain-close"
                 onClick={() => {
-                  // navigate to a different agent
-                  // (replace these IDs with your real agent IDs)
-                  navigate(`/agent-chat/${agentSuggestion.agentId}`);
-                  setAgentSuggestion(null);
+                  setChainMode(false);
+                  setSecondaryAgent(null);
                 }}
+                aria-label="Disable chaining"
               >
-                Use {agentSuggestion.label}
+                ✕
               </button>
+            </div>
+          )}
 
-              <button
-                className="ignore-btn"
-                onClick={() => setAgentSuggestion(null)}
-              >
-                Ignore
-              </button>
+          {agentSuggestions.length > 0 && (
+            <div className="agent-suggestion-list">
+
+              {/*  Ignore ALL suggestions */}
+              <div className="suggestion-list-header">
+                <span> Suggested agents</span>
+                <button
+                  className="ignore-all-btn"
+                  onClick={() => setAgentSuggestions([])}
+                  title="Ignore all suggestions"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {agentSuggestions.map((s) => (
+                <div key={s.agentId} className="agent-suggestion-card">
+                  <div className="suggestion-header">
+                     <strong>{s.label}</strong>
+                  </div>
+
+                  <p className="suggestion-reason">{s.reason}</p>
+
+                  <div className="suggestion-actions">
+                    <button
+                      onClick={() => {
+                        navigate(`/agent-chat/${s.agentId}`);
+                        setAgentSuggestions([]);
+                      }}
+                    >
+                      Use {s.label}
+                    </button>
+
+                    <button
+                      className="ignore-btn"
+                      onClick={() =>
+                        setAgentSuggestions((prev) =>
+                          prev.filter((a) => a.agentId !== s.agentId)
+                        )
+                      }
+                    >
+                      Ignore
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 
@@ -384,8 +490,14 @@ export default function ChatInterface() {
                 const value = e.target.value;
                 setInput(value);
 
-                const suggestion = suggestAgentFromMessage(value, allAgents);
-                setAgentSuggestion(suggestion);
+                const suggestions = suggestAgentsFromMessage(
+                  value,
+                  allAgents,
+                  agentId // current chat agent
+                );
+
+                setAgentSuggestions(suggestions);
+
               }}
               onKeyDown={(e) => e.key === "Enter" && sendMessage()}
             />
@@ -415,11 +527,21 @@ function MessageBubble({ msg, submitFeedback, hasFeedback }) {
 
   return (
     <div className={`message ${msg.sender === "user" ? "user" : "bot"}`}>
-      {/*TEXT MESSAGE*/}
-      {msg.text && (
-        <ReactMarkdown>
-          {msg.text}
-        </ReactMarkdown>
+      {msg.text && msg.sender === "bot" && (
+        <div className="bot-markdown">
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            {msg.text}
+          </ReactMarkdown>
+        </div>
+      )}
+
+      {msg.text && msg.sender === "user" && (
+        <span>{msg.text}</span>
+      )}
+      {msg.chainMeta && (
+        <div className="agent-meta-hint">
+          Combined using {msg.chainMeta.primary} + {msg.chainMeta.secondary}
+        </div>
       )}
 
       {/*FILE MESSAGE*/}
