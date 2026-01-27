@@ -1,27 +1,25 @@
-import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import HomePage from "./pages/HomePage";
-import CreateAgentPage from "./pages/CreateAgent";
-import ChatInterface from "./pages/ChatInterface";
-import ViewAgents from "./pages/ViewAgents";
-
-
-import UserForm from "./components/UserForm";
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import SignIn from './pages/auth/SignIn'
+import SignUp from './pages/auth/SignUp'
+import HomePage from './pages/HomePage'
 
 function App() {
   return (
-    <Router>
+    <BrowserRouter>
       <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/create-agent" element={<CreateAgentPage />} />
-        <Route path="/agent-chat/:agentId" element={<ChatInterface />} />
-        <Route path="/view-agents" element={<ViewAgents />} />
-        <Route path="/agents" element={<ViewAgents />} />
 
-        <Route path="/test" element={<UserForm />} />
+        
+        <Route path="/" element={<Navigate to="/signin" replace />} />
+
+        <Route path="/signin" element={<SignIn />} />
+        <Route path="/signup" element={<SignUp />} />
+
+        {/* Main app */}
+        <Route path="/home" element={<HomePage />} />
+
       </Routes>
-    </Router>
-  );
+    </BrowserRouter>
+  )
 }
 
-export default App;
+export default App
