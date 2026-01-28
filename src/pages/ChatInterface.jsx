@@ -14,6 +14,8 @@ import {
 import { useParams, useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { orderBy } from "firebase/firestore";
+import { useSearchParams } from "react-router-dom";
 
 
 import { db } from "../firebase";
@@ -74,10 +76,16 @@ export default function ChatInterface() {
   const { agentId } = useParams();
   const navigate = useNavigate();
 
+  const [searchParams] = useSearchParams();
+  const urlConversationId = searchParams.get("conversationId");
+  const [conversationId, setConversationId] = useState(null);
+
   const [agent, setAgent] = useState(null);
   const [messages, setMessages] = useState([]);
+  
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(true);
+
 
   const [allAgents, setAllAgents] = useState([]);
   const [agentSuggestions, setAgentSuggestions] = useState([]);
@@ -91,6 +99,20 @@ export default function ChatInterface() {
 
   const [chainMode, setChainMode] = useState(false);
   const [secondaryAgent, setSecondaryAgent] = useState(null);
+
+  const filteredSuggestions = agentSuggestions.filter(
+  (s) => !secondaryAgent || s.agentId !== secondaryAgent.id
+);
+
+  useEffect(() => {
+    if (urlConversationId) {
+      setConversationId(urlConversationId);
+    } else {
+      // New chat
+      setConversationId(null);
+      setMessages([]);
+    }
+  }, [urlConversationId]);
 
 
   // Fetch agent metadata from Firestore
@@ -107,13 +129,13 @@ export default function ChatInterface() {
           });
 
           // Initial greeting message from bot
-          setMessages([
-            {
-              id: `greeting_${Date.now()}`,
-              sender: "bot",
-              text: `Hi User, I am ${data.name}. How can I help you today?`,
-            },
-          ]);
+          // setMessages([
+          //   {
+          //     id: `greeting_${Date.now()}`,
+          //     sender: "bot",
+          //     text: `Hi User, I am ${data.name}. How can I help you today?`,
+          //   },
+          // ]);
         } else {
           alert("Agent not found in database.");
         }
@@ -126,6 +148,64 @@ export default function ChatInterface() {
 
     loadAgent();
   }, [agentId]);
+
+  // useEffect(() => {
+  //   async function loadConversation() {
+  //     const q = query(
+  //       collection(db, "conversations"),
+  //       where("agentId", "==", agentId),
+  //       where("userId", "==", "user"),
+  //       orderBy("updatedAt", "desc")
+  //     );
+
+  //     const snap = await getDocs(q);
+
+  //     if (!snap.empty) {
+  //       // use latest conversation
+  //       setConversationId(snap.docs[0].id);
+  //     } 
+  //   }
+
+  //   loadConversation();
+  // }, [agentId]);
+
+  useEffect(() => {
+    if (conversationId) {
+      console.log("Conversation ID:", conversationId);
+    }
+  }, [conversationId]);
+
+  useEffect(() => {
+  if (!conversationId) return;
+
+  // Clear immediately so UI doesn't flash old chat
+  setMessages([]);
+
+  async function loadMessages() {
+    const q = query(
+      collection(db, "messages"),
+      where("conversationId", "==", conversationId),
+      orderBy("createdAt", "asc")
+    );
+
+    const snap = await getDocs(q);
+
+    const history = snap.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        sender: data.sender === "assistant" ? "bot" : data.sender,
+        text: data.text,
+        file: data.file || null,
+      };
+    });
+
+    setMessages(history);
+  }
+
+  loadMessages();
+}, [conversationId]);
+
 
     useEffect(() => {
   async function loadAgentsForSuggestion() {
@@ -177,12 +257,46 @@ export default function ChatInterface() {
     return "📎";
   };
 
+  const createConversationIfNeeded = async (firstMessage) => {
+    if (conversationId) return conversationId;
+
+    const convoRef = await addDoc(collection(db, "conversations"), {
+      agentId,
+      userId: "user",
+      title: firstMessage.slice(0, 40), // ✅ ChatGPT-style title
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+
+    setConversationId(convoRef.id);
+    return convoRef.id;
+  };
+
+
+
   // Send message to backend and get AI response
 const sendMessage = async () => {
   if (!input.trim() && !selectedFile) return;
 
+  // DEFINE FIRST
   const userMessage = input;
   setInput("");
+
+  // CREATE CONVERSATION IF NEEDED
+  let activeConversationId = conversationId;
+
+  if (!activeConversationId) {
+    const convoRef = await addDoc(collection(db, "conversations"), {
+      agentId,
+      userId: "user",
+      title: userMessage.slice(0, 40), 
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+
+    activeConversationId = convoRef.id;
+    setConversationId(convoRef.id);
+  }
 
   let fileData = null;
   if (selectedFile) {
@@ -191,79 +305,80 @@ const sendMessage = async () => {
     setFilePreview(null);
   }
 
+  
+  const imageBase64 = fileData?.base64 || null;
   setMessages((prev) => [
     ...prev,
-    { sender: "user", text: userMessage, file: fileData }
+    { sender: "user", text: userMessage, file: fileData },
   ]);
 
   await addDoc(collection(db, "messages"), {
+    conversationId: activeConversationId,
     agentId,
     sender: "user",
-    sessionId,
     text: userMessage,
     file: fileData,
     createdAt: serverTimestamp(),
   });
 
-try {
-  let res;
+  try {
+    let res;
 
-  if (chainMode && secondaryAgent) {
-    res = await queryAgentChain(
+    if (chainMode && secondaryAgent) {
+      res = await queryAgentChain({
+        primary_agent_id: agentId,
+        secondary_agent_id: secondaryAgent.id,
+        user_message: userMessage,
+        pass_context: true
+      });
+    } else {
+      res = await queryAgent(
+        agentId,
+        userMessage,
+        imageBase64
+      );
+    }
+
+
+
+    const aiText = res.reply;
+
+    const aiDocRef = await addDoc(collection(db, "messages"), {
+      conversationId: activeConversationId,
       agentId,
-      secondaryAgent.id,
-      userMessage,
-      true
-    );
-  } else {
-    res = await queryAgent(
-      agentId,
-      userMessage,
-      fileData?.base64 || null
-    );
-  }
-
-  const aiText = res.reply;
-
-  if (!aiText) {
-    throw new Error("AI text is empty");
-  }
-
-  const aiDocRef = await addDoc(collection(db, "messages"), {
-    agentId,
-    sender: "ai",
-    sessionId,
-    text: aiText,
-    createdAt: serverTimestamp(),
-  });
-
-  setMessages((prev) => [
-    ...prev,
-    {
-      id: aiDocRef.id,
-      sender: "bot",
+      sender: "assistant",
       text: aiText,
-      messageId: aiDocRef.id,
-    },
-  ]);
-} catch (err) {
-  console.error("Error sending message:", err);
-  setMessages((prev) => [
-    ...prev,
-    {
-      sender: "bot",
-      text: "Sorry, something went wrong.",
-    },
-  ]);
-}
+      createdAt: serverTimestamp(),
+    });
+
+    await updateDoc(doc(db, "conversations", activeConversationId), {
+      updatedAt: serverTimestamp(),
+    });
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: aiDocRef.id,
+        sender: "bot",
+        text: aiText,
+      },
+    ]);
+  } catch (err) {
+    console.error(err);
+    setMessages((prev) => [
+      ...prev,
+      { sender: "bot", text: "Something went wrong." },
+    ]);
+  }
 };
+
 
 
     const submitFeedback = async (messageId, satisfied) => {
     await addDoc(collection(db, "feedback"), {
       messageId,
       agentId,
-      sessionId,
+      conversationId,
       satisfied,
       createdAt: serverTimestamp(),
     });
@@ -272,7 +387,8 @@ try {
   const hasFeedback = async (messageId) => {
     const q = query(
       collection(db, "feedback"),
-      where("messageId", "==", messageId)
+      where("messageId", "==", messageId),
+      where("conversationId", "==", conversationId)
     );
     const snap = await getDocs(q);
     return !snap.empty;
@@ -339,7 +455,21 @@ try {
         {showKB && <KnowledgeBase agentId={agentId} />}
 
         {/* === CHAT MESSAGES === */}
-                <div className="messages-container">
+        <div className="messages-container">
+
+          {/* GREETING / EMPTY STATE */}
+          {!conversationId && messages.length === 0 && (
+            <div className="empty-chat">
+              <div className="empty-avatar" style={{ backgroundColor: agent.color }}>
+                {agent.icon || "🤖"}
+              </div>
+
+              <h3>Hi! I’m {agent.name}</h3>
+              <p>How can I help you today?</p>
+            </div>
+          )}
+
+          {/* ✅ CHAT HISTORY */}
           {messages.map((msg, idx) => (
             <MessageBubble
               key={idx}
@@ -348,6 +478,7 @@ try {
               hasFeedback={hasFeedback}
             />
           ))}
+
           <div ref={messagesEndRef} />
         </div>
 
@@ -374,7 +505,7 @@ try {
             </div>
           )}
 
-          {agentSuggestions.length > 0 && (
+          {filteredSuggestions.length > 0 && (
             <div className="agent-suggestion-list">
 
               {/*  Ignore ALL suggestions */}
@@ -389,7 +520,7 @@ try {
                 </button>
               </div>
 
-              {agentSuggestions.map((s) => (
+              {filteredSuggestions.map((s) => (
                 <div key={s.agentId} className="agent-suggestion-card">
                   <div className="suggestion-header">
                      <strong>{s.label}</strong>
@@ -490,13 +621,16 @@ try {
                 const value = e.target.value;
                 setInput(value);
 
-                const suggestions = suggestAgentsFromMessage(
-                  value,
-                  allAgents,
-                  agentId // current chat agent
-                );
+              const suggestions = suggestAgentsFromMessage(
+                value,
+                allAgents,
+                agentId
+              ).filter(
+                (s) => !secondaryAgent || s.agentId !== secondaryAgent.id
+              );
 
-                setAgentSuggestions(suggestions);
+              setAgentSuggestions(suggestions);
+
 
               }}
               onKeyDown={(e) => e.key === "Enter" && sendMessage()}
