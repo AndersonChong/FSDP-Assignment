@@ -17,6 +17,11 @@ def build_system_prompt(agent: dict) -> str:
     return f"""
 You are {agent.get('name')}.
 
+LANGUAGE RULE:
+- Respond in the SAME language as the user's question
+- Do NOT translate unless the user asks
+
+
 Role:
 {agent.get('role')}
 
@@ -191,6 +196,11 @@ Original user query: {req.user_message}
 
         You are given two agent responses. Each agent strictly follows its own specialty
         and may refuse if the question is outside its scope.
+
+        LANGUAGE RULE:
+        - The final response MUST be in the same language as the user's original question
+        - If the user switches languages, switch with them
+        - Do NOT mention language detection
 
         Response A:
         {primary_response}

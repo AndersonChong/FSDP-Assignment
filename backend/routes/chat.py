@@ -22,35 +22,46 @@ def build_system_prompt(agent: dict) -> str:
     summary = agent.get("summary", "")
     name = agent.get("name", "AI Assistant")
 
-    return (
-        f"You are {name}.\n"
-        f"Persona: {persona}\n"
-        f"Summary: {summary}\n"
-        f"Specialties: {specialties}\n\n"
+    return f"""
+    You are an AI assistant named {name}.
 
-        "IMPORTANT RESPONSE BEHAVIOR:\n"
-        "You are having a natural chat with a human.\n"
-        "Speak like a friendly person, not a bot.\n\n"
+    LANGUAGE RULE (VERY IMPORTANT):
+    - Always respond in the SAME language as the user's question
+    - If the user switches languages, switch with them
+    - Do NOT mention language detection
 
-        "Formatting rules you MUST follow:\n"
-        "Casual conversation, jokes, encouragement, and stories must be written as normal sentences and short paragraphs.\n"
-        "Do NOT use bullet points, dashes, stars, or lists for these responses.\n"
-        "Bullet points are allowed ONLY when the user explicitly asks for tips, steps, or advice.\n"
-        "If bullet points are used, limit them to at most two items.\n\n"
+    Persona:
+    {persona}
 
-        "Style rules:\n"
-        "Keep responses short and easy to read.\n"
-        "Avoid long paragraphs.\n"
-        "Do not sound academic, clinical, or instructional unless asked.\n"
-        "Use at most one emoji, and only when it feels natural.\n"
-        "Always end with exactly one gentle follow-up question.\n"
-        "The follow-up question must always be placed on its own line, separated by a blank line from the main response.\n"
+    Summary:
+    {summary}
 
-        "If an image is provided:\n"
-        "- You must look at the image carefully.\n"
-        "- Identify the drink or ingredients shown.\n"
-        "- Describe what you see before giving advice.\n\n"
-    )
+    Specialties:
+    {specialties}
+
+    STRICT DOMAIN RULES (VERY IMPORTANT):
+    - You MUST ONLY answer questions directly related to your specialties.
+    - If a question is NOT related to your specialties:
+    - You MUST politely refuse.
+    - You MUST NOT answer the question.
+    - You MUST NOT give tips, examples, or partial help.
+    - You MUST suggest what you CAN help with instead.
+    - Do NOT guess.
+    - Do NOT stretch your expertise.
+    - Do NOT answer "just to be helpful".
+
+    Response style rules:
+    - Sound like a friendly human, not a robot.
+    - Keep responses short and conversational.
+    - Do NOT use bullet points unless explicitly asked.
+    - Use at most ONE emoji if it feels natural.
+    - Always end with exactly ONE gentle follow-up question.
+    - The follow-up question must be on its own line.
+
+    If the user uploads an image:
+    - Describe what you see first.
+    - ONLY continue if the image is related to your specialties.
+    """
 
 def get_agent_sync(agent_id: str):
     return db.get_agent_by_id(agent_id)
@@ -94,37 +105,18 @@ def call_openai_sync(system_prompt, user_text, image_base64=None):
 
 @router.post("/query")
 async def chat(req: ChatRequest):
-    print("Chat endpoint hit")
-    print("Incoming request:", req.agent_id, req.user_message)
-    print("IMAGE RECEIVED:", bool(req.image_base64))
-
-    try:
-        agent = await asyncio.to_thread(get_agent_sync, req.agent_id)
-    except Exception as e:
-        print("Firestore error:", e)
-        raise HTTPException(status_code=500, detail="Firestore error")
-
-    print("Agent fetched:", agent)
+    agent = await asyncio.to_thread(get_agent_sync, req.agent_id)
 
     if not agent:
         raise HTTPException(status_code=404, detail="Agent not found")
 
-    try:
-        reply = await asyncio.wait_for(
-            asyncio.to_thread(
-                call_openai_sync,
-                build_system_prompt(agent),
-                req.user_message,
-                req.image_base64
-            ),
-            timeout=25
-        )
-        print("OpenAI replied")
-        return {"reply": reply}
+    reply = await asyncio.to_thread(
+        call_openai_sync,
+        build_system_prompt(agent),
+        req.user_message,
+        req.image_base64
+    )
 
-    except asyncio.TimeoutError:
-        return {"reply": "AI response timed out. Please try again."}
+    return {"reply": reply}
 
-    except Exception as e:
-        print("OPENAI ERROR:", e)
-        raise HTTPException(status_code=500, detail="AI service error")
+
