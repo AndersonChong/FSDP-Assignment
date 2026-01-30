@@ -1,0 +1,83 @@
+.invite-inbox {
+  position: absolute;
+  right: 40px;
+  top: 120px;
+  width: 320px;
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #e5e5e5;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+  padding: 16px;
+  z-index: 50;
+}
+
+.invite-title {
+  margin-bottom: 12px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.invite-empty {
+  font-size: 14px;
+  color: #777;
+}
+
+/* Individual invite card */
+.invite-card {
+  border-top: 1px solid #eee;
+  padding-top: 12px;
+  margin-top: 12px;
+}
+
+.invite-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.invite-group {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.invite-from {
+  font-size: 12px;
+  color: #666;
+}
+
+/* Buttons */
+.invite-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.invite-btn {
+  flex: 1;
+  padding: 8px 0;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.invite-btn.accept {
+  background: #111;
+  color: #fff;
+}
+
+.invite-btn.accept:hover {
+  background: #000;
+}
+
+.invite-btn.decline {
+  background: #f1f1f1;
+  color: #333;
+}
+
+.invite-btn.decline:hover {
+  background: #e4e4e4;
+}
