@@ -1,4 +1,6 @@
 import React from "react";
+import HelpPage from "./pages/HelpPage";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 
 import SignIn from "./pages/auth/SignIn";
@@ -31,6 +33,7 @@ function App() {
         <Route path="/agent-chat/:agentId" element={<ChatInterface />} />
         <Route path="/view-agents" element={<ViewAgents />} />
         <Route path="/agents" element={<ViewAgents />} />
+        <Route path="/help" element={<HelpPage />} />
         <Route path="/group-chat/:groupId" element={<ChatInterface />} />
 
         {/* Testing */}
