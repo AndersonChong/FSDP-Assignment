@@ -39,17 +39,17 @@ export default function SignIn() {
     setBusy(true)
 
     try {
-      await addDoc(collection(db, 'signins'), {
-        email,
-        createdAt: serverTimestamp()
-      })
+      await addDoc(collection(db, "signins"), {
+  email,
+  createdAt: serverTimestamp(),
+});
 
-      setMessage('Signed in. Redirecting…')
+localStorage.setItem("currentUser", email); 
 
-      // ✅ THIS IS WHAT WAS MISSING
-      setTimeout(() => {
-        navigate('/home')
-      }, 500)
+setMessage("Signed in. Redirecting...");
+setTimeout(() => {
+  navigate("/home");
+}, 500);
 
     } catch (error) {
       console.error('Firestore error:', error)

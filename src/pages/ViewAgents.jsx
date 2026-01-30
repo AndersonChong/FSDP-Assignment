@@ -17,25 +17,45 @@ import { FiSettings, FiTrash2 } from "react-icons/fi";
 
 export default function ViewAgents() {
   const navigate = useNavigate();
-  const handleLogoClick = () => navigate("/");
 
+  // 🔐 Read logged-in user (NOT a hook, safe)
+  const currentUser = localStorage.getItem("currentUser");
+
+  // ✅ ALL HOOKS MUST COME FIRST
   const [agents, setAgents] = useState([]);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
 
+  // 🚫 Redirect if not logged in (SAFE)
   useEffect(() => {
+    if (!currentUser) {
+      navigate("/signin");
+    }
+  }, [currentUser, navigate]);
+
+  // 📥 Load only THIS USER’S agents
+  useEffect(() => {
+    if (!currentUser) return;
+
     async function loadAgents() {
       const snapshot = await getDocs(collection(db, "agents"));
-      const list = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+
+      const list = snapshot.docs
+        .map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }))
+        .filter((agent) => agent.owner === currentUser);
+
       setAgents(list);
     }
-    loadAgents();
-  }, []);
 
-  // Enable / Disable
+    loadAgents();
+  }, [currentUser]);
+
+  const handleLogoClick = () => navigate("/home");
+
+  // Enable / Disable (OWNER ONLY)
   const toggleAgentStatus = async (agentId, currentStatus) => {
     await updateDoc(doc(db, "agents", agentId), {
       isActive: !currentStatus,
@@ -48,7 +68,7 @@ export default function ViewAgents() {
     );
   };
 
-  // ❌ PERMANENT DELETE (disabled agents only)
+  // ❌ PERMANENT DELETE (OWNER ONLY)
   const deleteAgent = async (agentId) => {
     const confirmDelete = window.confirm(
       "This will permanently delete the agent. This action cannot be undone. Continue?"
@@ -73,13 +93,8 @@ export default function ViewAgents() {
     return true;
   });
 
-  const activeAgents = filteredAgents.filter(
-    (a) => a.isActive !== false
-  );
-
-  const disabledAgents = filteredAgents.filter(
-    (a) => a.isActive === false
-  );
+  const activeAgents = filteredAgents.filter((a) => a.isActive !== false);
+  const disabledAgents = filteredAgents.filter((a) => a.isActive === false);
 
   return (
     <div className="view-layout">
@@ -173,10 +188,9 @@ function AgentCard({ agent, onToggle, onDelete, navigate }) {
       <div className="agent-info">
         <h3>{agent.name}</h3>
         <p>{agent.summary}</p>
-        <span className="agent-created">Created by User</span>
+        <span className="agent-created">Created by you</span>
       </div>
 
-      {/* STATUS BADGE */}
       <span
         className={`status-badge ${
           agent.isActive ? "active" : "disabled"
@@ -189,7 +203,6 @@ function AgentCard({ agent, onToggle, onDelete, navigate }) {
         {agent.isActive ? "Active" : "Disabled"}
       </span>
 
-      {/* DELETE ICON (ONLY WHEN DISABLED) */}
       {agent.isActive === false && (
         <FiTrash2
           className="agent-delete"
@@ -201,7 +214,6 @@ function AgentCard({ agent, onToggle, onDelete, navigate }) {
         />
       )}
 
-      {/* Settings icon reserved */}
       <FiSettings
         className="agent-settings"
         onClick={(e) => e.stopPropagation()}
