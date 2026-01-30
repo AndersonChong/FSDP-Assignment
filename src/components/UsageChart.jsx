@@ -19,8 +19,35 @@ export default function UsageChart() {
   const [data, setData] = useState([]);
   const [peakDay, setPeakDay] = useState(null);
 
+  // 🔐 Logged-in user
+  const currentUser = localStorage.getItem("currentUser");
+
   useEffect(() => {
+    if (!currentUser) return;
+
     const fetchQuestionsPerDay = async () => {
+      // 1️⃣ Get user’s agents
+      const agentsSnap = await getDocs(collection(db, "agents"));
+      const userAgentIds = agentsSnap.docs
+        .filter((doc) => doc.data().owner === currentUser)
+        .map((doc) => doc.id);
+
+      // 🚫 No agents → empty chart
+      if (userAgentIds.length === 0) {
+        const empty = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(
+          (day) => ({
+            day,
+            questions: 0,
+            lastWeek: 0,
+            trend: "—",
+          })
+        );
+        setData(empty);
+        setPeakDay(null);
+        return;
+      }
+
+      // 2️⃣ Get messages
       const snap = await getDocs(collection(db, "messages"));
 
       const orderedDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -35,8 +62,14 @@ export default function UsageChart() {
       const now = new Date();
 
       snap.docs.forEach((doc) => {
-        const { sender, createdAt } = doc.data();
-        if (sender !== "user" || !createdAt) return;
+        const { sender, createdAt, agentId } = doc.data();
+
+        if (
+          sender !== "user" ||
+          !createdAt ||
+          !userAgentIds.includes(agentId)
+        )
+          return;
 
         const date = createdAt.toDate();
         const dayIndex = (date.getDay() + 6) % 7;
@@ -68,12 +101,15 @@ export default function UsageChart() {
         d.questions > max.questions ? d : max
       );
 
-      setPeakDay(peak);
+      // 🧠 If all zeros, no peak
+      const hasData = chartData.some((d) => d.questions > 0);
+
+      setPeakDay(hasData ? peak : null);
       setData(chartData);
     };
 
     fetchQuestionsPerDay();
-  }, []);
+  }, [currentUser]);
 
   return (
     <div className="usage-card">
@@ -96,7 +132,6 @@ export default function UsageChart() {
             }}
           />
 
-          {/* MAIN LINE */}
           <Line
             type="monotone"
             dataKey="questions"
@@ -104,26 +139,8 @@ export default function UsageChart() {
             strokeWidth={3}
             dot={{ r: 5 }}
             activeDot={{ r: 7 }}
-            label={({ x, y, value }) => {
-              const maxValue = Math.max(...data.map(d => d.questions));
-              const isPeak = value === maxValue;
-
-              if (isPeak) return null;
-
-              return (
-                <text
-                  x={x}
-                  y={y - 14}
-                  textAnchor="middle"
-                  fill="#555"
-                  fontSize={12}
-                >
-                  {value}
-                </text>
-              );
-            }}
           />
-          {/* PEAK DAY HIGHLIGHT */}
+
           {peakDay && (
             <ReferenceDot
               x={peakDay.day}

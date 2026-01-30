@@ -177,4 +177,42 @@
   }
 }
 
+/* === LOGOUT BUTTON === */
+
+.user-dropdown {
+  position: absolute;
+  top: 48px;
+  left: 0;
+  background: var(--sidebar-bg, #111);
+  border: 1px solid var(--border-color, #222);
+  border-radius: 8px;
+  min-width: 140px;
+  padding: 6px;
+  z-index: 50;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+.user-dropdown-item {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: #fff;
+  padding: 10px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+}
+
+.user-dropdown-item:hover {
+  background: #333;
+}
+
+.user-dropdown-item.logout {
+  color: #ff6b6b;
+}
+
+
 

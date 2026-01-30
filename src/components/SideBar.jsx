@@ -2,12 +2,28 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/sidebar.css";
 import { useTheme } from "../context/ThemeContext";
-import { FiMenu, FiX } from "react-icons/fi";
+import { FiMenu, FiX, FiLogOut } from "react-icons/fi";
 
 const SideBar = () => {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
+
   const [open, setOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  // 🔐 Logged-in user
+  const currentUser = localStorage.getItem("currentUser");
+  const displayName = currentUser
+    ? currentUser.split("@")[0]
+    : "Guest";
+
+  // 🧹 Logout
+  const handleLogout = () => {
+    localStorage.removeItem("currentUser");
+    setUserMenuOpen(false);
+    setOpen(false);
+    navigate("/signin");
+  };
 
   return (
     <>
@@ -23,43 +39,83 @@ const SideBar = () => {
       </div>
 
       {/* BACKDROP */}
-      {open && <div className="sidebar-backdrop" onClick={() => setOpen(false)} />}
+      {open && (
+        <div
+          className="sidebar-backdrop"
+          onClick={() => {
+            setOpen(false);
+            setUserMenuOpen(false);
+          }}
+        />
+      )}
 
       {/* SIDEBAR */}
       <div className={`sidebar ${open ? "open" : ""}`}>
         {/* Mobile close button */}
         <button
           className="sidebar-close-btn"
-          onClick={() => setOpen(false)}
+          onClick={() => {
+            setOpen(false);
+            setUserMenuOpen(false);
+          }}
           aria-label="Close sidebar"
         >
           <FiX size={20} />
         </button>
 
-        <div className="user-profile">
+        {/* USER PROFILE (CLICKABLE) */}
+        <div
+          className="user-profile"
+          onClick={() => setUserMenuOpen((v) => !v)}
+          style={{ cursor: "pointer", position: "relative" }}
+        >
           <div className="user-icon">👤</div>
-          <p>User xx2f0</p>
+          <p>{displayName}</p>
+
+          {/* USER DROPDOWN MENU */}
+          {userMenuOpen && currentUser && (
+            <div className="user-dropdown">
+              <button
+                className="user-dropdown-item logout"
+                onClick={handleLogout}
+              >
+                <FiLogOut style={{ marginRight: 8 }} />
+                Logout
+              </button>
+            </div>
+          )}
         </div>
 
+        {/* CREATE AGENT */}
         <button
           className="create-agent-btn"
           onClick={() => {
             navigate("/create-agent");
             setOpen(false);
+            setUserMenuOpen(false);
           }}
         >
           + Create New Agent
         </button>
+        {/*create grupchat*/}
+        <button
+          className="create-agent-btn"
+          onClick={() => navigate("/create-group")}
+        >
+          + Create Group Chat
+        </button>
 
+        {/* MENU */}
         <div className="menu">
           <button
             className="menu-btn"
             onClick={() => {
-              navigate("/explore");
+              navigate("/home");
               setOpen(false);
+              setUserMenuOpen(false);
             }}
           >
-            Explore
+            Home
           </button>
 
           <button
@@ -67,13 +123,14 @@ const SideBar = () => {
             onClick={() => {
               navigate("/view-agents");
               setOpen(false);
+              setUserMenuOpen(false);
             }}
           >
             View AI Agents
           </button>
         </div>
 
-        {/* Theme toggle at bottom */}
+        {/* THEME TOGGLE AT BOTTOM */}
         <div
           className="menu"
           style={{
