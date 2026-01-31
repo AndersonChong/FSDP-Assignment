@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { db } from "../firebase";
 import {
   collection,
@@ -11,6 +11,7 @@ import {
   arrayUnion,
 } from "firebase/firestore";
 import "../styles/inviteInbox.css";
+import { FiMail } from "react-icons/fi";
 
 export default function InviteInbox() {
   const userEmail = localStorage.getItem("currentUser");
@@ -36,6 +37,13 @@ export default function InviteInbox() {
     return () => unsub();
   }, [userEmail]);
 
+  const inviteCount = invites.length;
+  const badgeText = useMemo(() => {
+    if (inviteCount <= 0) return "";
+    if (inviteCount > 99) return "99+";
+    return String(inviteCount);
+  }, [inviteCount]);
+
   const acceptInvite = async (invite) => {
     try {
       await updateDoc(doc(db, "groupChats", invite.groupId), {
@@ -60,7 +68,22 @@ export default function InviteInbox() {
 
   return (
     <div className="invite-inbox">
-      <h4 className="invite-title">Group Invites</h4>
+      <div className="invite-header">
+        <div className="invite-title-row">
+          <div className="invite-icon-wrap" aria-label="Invites">
+            <FiMail size={18} />
+
+            {/* 🔴 notification badge */}
+            {inviteCount > 0 && (
+              <span className="invite-badge" aria-label={`${inviteCount} invites`}>
+                {badgeText}
+              </span>
+            )}
+          </div>
+
+          <h4 className="invite-title">Group Invites</h4>
+        </div>
+      </div>
 
       {invites.length === 0 && (
         <p className="invite-empty">No pending invites</p>

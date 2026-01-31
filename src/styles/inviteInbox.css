@@ -11,15 +11,68 @@
   z-index: 50;
 }
 
+/* ✅ Title row (icon + title) */
+.invite-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.invite-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .invite-title {
-  margin-bottom: 12px;
+  margin: 0;              /* ✅ remove extra spacing */
   font-size: 16px;
   font-weight: 600;
+}
+
+/* ✅ Icon container so badge can be positioned */
+.invite-icon-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #f3f4f6;
+  border: 1px solid #e5e5e5;
+}
+
+/* 🔴 red badge top-right */
+.invite-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+
+  border-radius: 999px;
+  background: #ef4444;
+  color: #fff;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+
+  /* ✅ gives the "layered" effect like your sketch */
+  border: 2px solid #ffffff;
 }
 
 .invite-empty {
   font-size: 14px;
   color: #777;
+  margin-top: 12px;
 }
 
 /* Individual invite card */
