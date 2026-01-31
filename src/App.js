@@ -2,16 +2,15 @@ import React from "react";
 import HelpPage from "./pages/HelpPage";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 
-
 import SignIn from "./pages/auth/SignIn";
 import SignUp from "./pages/auth/SignUp";
 
 import HomePage from "./pages/HomePage";
 import CreateAgentPage from "./pages/CreateAgent";
-import CreateGroupChat from "./pages/CreateGroupChat"; 
+import CreateGroupChat from "./pages/CreateGroupChat";
 import ChatInterface from "./pages/ChatInterface";
 import ViewAgents from "./pages/ViewAgents";
-
+import GroupChatInterface from "./pages/GroupChatInterface"; // ✅ add this
 
 import UserForm from "./components/UserForm";
 
@@ -30,11 +29,19 @@ function App() {
         <Route path="/home" element={<HomePage />} />
         <Route path="/create-agent" element={<CreateAgentPage />} />
         <Route path="/create-group" element={<CreateGroupChat />} />
+
+        {/* 1-1 chat */}
         <Route path="/agent-chat/:agentId" element={<ChatInterface />} />
+
+        {/* Agents */}
         <Route path="/view-agents" element={<ViewAgents />} />
         <Route path="/agents" element={<ViewAgents />} />
+
+        {/* Group chat */}
+        <Route path="/group-chat/:groupId" element={<GroupChatInterface />} /> {/* ✅ keep only this */}
+
+        {/* Help */}
         <Route path="/help" element={<HelpPage />} />
-        <Route path="/group-chat/:groupId" element={<ChatInterface />} />
 
         {/* Testing */}
         <Route path="/test" element={<UserForm />} />

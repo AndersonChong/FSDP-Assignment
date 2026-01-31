@@ -7,7 +7,6 @@ import AgentList from "../components/AgentList";
 import InviteInbox from "../components/InviteInbox";
 import GroupChatList from "../components/GroupChatList";
 
-
 import logo from "../assets/Flying Bot Logo.png";
 import { FiSettings, FiMail } from "react-icons/fi";
 
@@ -15,7 +14,14 @@ import "../styles/homepage.css";
 
 // Firebase
 import { db } from "../firebase";
-import { collection, getDocs, Timestamp } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  Timestamp,
+  onSnapshot,
+  query,
+  where,
+} from "firebase/firestore";
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -25,6 +31,9 @@ export default function HomePage() {
 
   // 📬 Mailbox toggle
   const [showInbox, setShowInbox] = useState(false);
+
+  // 🔴 Invite count for badge
+  const [inviteCount, setInviteCount] = useState(0);
 
   const [stats, setStats] = useState({
     totalAgents: 0,
@@ -43,6 +52,29 @@ export default function HomePage() {
       navigate("/signin");
     }
   }, [currentUser, navigate]);
+
+  // ✅ LIVE invite count for badge on homepage icon
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const qInvites = query(
+      collection(db, "groupInvites"),
+      where("toEmail", "==", currentUser),
+      where("status", "==", "pending")
+    );
+
+    const unsub = onSnapshot(
+      qInvites,
+      (snap) => {
+        setInviteCount(snap.size); // number of pending invites
+      },
+      (err) => {
+        console.error("Invite count listener error:", err);
+      }
+    );
+
+    return () => unsub();
+  }, [currentUser]);
 
   // 📊 Fetch USER-SCOPED dashboard stats
   useEffect(() => {
@@ -81,14 +113,10 @@ export default function HomePage() {
         .filter((f) => f.owner === currentUser);
 
       const totalFeedback = userFeedback.length;
-      const positive = userFeedback.filter(
-        (f) => f.satisfied === true
-      ).length;
+      const positive = userFeedback.filter((f) => f.satisfied === true).length;
 
       const userSatisfaction =
-        totalFeedback === 0
-          ? 0
-          : Math.round((positive / totalFeedback) * 100);
+        totalFeedback === 0 ? 0 : Math.round((positive / totalFeedback) * 100);
 
       setStats({
         totalAgents,
@@ -112,30 +140,36 @@ export default function HomePage() {
           </div>
 
           {/* Top-right icons */}
-          
-            <div
-              style={{
-                position: "absolute",
-                right: "40px",
-                display: "flex",
-                gap: "14px",
-                alignItems: "center",
-              }}
+          <div
+            style={{
+              position: "absolute",
+              right: "40px",
+              display: "flex",
+              gap: "14px",
+              alignItems: "center",
+            }}
+          >
+            {/* 📬 Mailbox with 🔴 badge */}
+            <button
+              className="mailbox-btn"
+              onClick={() => setShowInbox((prev) => !prev)}
+              title="Group Invites"
+              style={{ position: "relative" }} // ✅ allow badge overlay
             >
-              {/* 📬 Mailbox */}
-              <button
-                className="mailbox-btn"
-                onClick={() => setShowInbox((prev) => !prev)}
-                title="Group Invites"
-              >
-                <FiMail size={22} />
-              </button>
+              <FiMail size={22} />
 
-              {/* ⚙️ Settings */}
-              <button className="settings-btn" title="Settings">
-                <FiSettings className="settings-icon" />
-              </button>
-            </div>
+              {inviteCount > 0 && (
+                <span className="mailbox-badge">
+                  {inviteCount > 99 ? "99+" : inviteCount}
+                </span>
+              )}
+            </button>
+
+            {/* ⚙️ Settings */}
+            <button className="settings-btn" title="Settings">
+              <FiSettings className="settings-icon" />
+            </button>
+          </div>
         </div>
 
         {/* 📬 Invite Inbox */}
@@ -164,6 +198,7 @@ export default function HomePage() {
 
         {/* Recent AI Agents */}
         <AgentList />
+
         {/* Group Chat List */}
         <GroupChatList />
       </div>
