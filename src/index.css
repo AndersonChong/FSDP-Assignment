@@ -65,8 +65,10 @@ body {
 button {
   font-family: inherit;
   color: inherit;
-  background: none;
+  background: transparent; 
+  border: none;
 }
+
 
 input {
   font-family: inherit;
