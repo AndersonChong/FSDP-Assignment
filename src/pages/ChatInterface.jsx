@@ -103,6 +103,7 @@ export default function ChatInterface() {
   const [filePreview, setFilePreview] = useState(null);
   const [sessionId, setSessionId] = useState(() => `session_${Date.now()}`);
   const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
 
   const [chainMode, setChainMode] = useState(false);
   const [secondaryAgent, setSecondaryAgent] = useState(null);
@@ -176,6 +177,12 @@ export default function ChatInterface() {
       setMessages([]);
     }
   }, [urlConversationId]);
+
+  useEffect(() => {
+    if (!input && inputRef.current) {
+      inputRef.current.style.height = "auto";
+    }
+  }, [input]);
 
 
   // Fetch agent metadata from Firestore
@@ -345,6 +352,9 @@ const sendMessage = async (overrideText) => {
 
   const userMessage = textToSend;
   setInput("");
+  if (inputRef.current) {
+    inputRef.current.style.height = "auto";
+  }
 
   // CREATE CONVERSATION IF NEEDED
   let activeConversationId = conversationId;
@@ -581,22 +591,9 @@ useEffect(() => {
           <div ref={messagesEndRef} />
         </div>
 
-        {/*  CONFIDENCE DISCLAIMER and TOGGLE */}
-        <div className="confidence-footer">
-          <small className="confidence-disclaimer">
-            Confidence reflects system context availability, not factual accuracy.
-          </small>
-
-          <button
-            className="confidence-toggle-link"
-            onClick={() => setShowAllConfidence((prev) => !prev)}
-          >
-            {showAllConfidence ? "Hide confidence details" : "Show confidence details"}
-          </button>
-        </div>
-
-        {/* === INPUT BOX === */}
-        <div className="input-area">
+        <div className="input-footer">
+          {/* === INPUT BOX === */}
+          <div className="input-area">
         
           {/*  CHAIN MODE INDICATOR */}
           {chainMode && secondaryAgent && (
@@ -726,32 +723,54 @@ useEffect(() => {
             </label>
 
             {/* Text input */}
-            <input
-              type="text"
+            <textarea
+              ref={inputRef}
+              rows={1}
               placeholder="Type your message..."
               value={input}
               onChange={(e) => {
                 const value = e.target.value;
                 setInput(value);
 
-              const suggestions = suggestAgentsFromMessage(
-                value,
-                allAgents,
-                agentId
-              ).filter(
-                (s) => !secondaryAgent || s.agentId !== secondaryAgent.id
-              );
+                e.target.style.height = "auto";
+                e.target.style.height = `${Math.min(e.target.scrollHeight, 160)}px`;
 
-              setAgentSuggestions(suggestions);
+                const suggestions = suggestAgentsFromMessage(
+                  value,
+                  allAgents,
+                  agentId
+                ).filter(
+                  (s) => !secondaryAgent || s.agentId !== secondaryAgent.id
+                );
 
-
+                setAgentSuggestions(suggestions);
               }}
-              onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  sendMessage();
+                }
+              }}
             />
 
             {/* Send button */}
             <button className="send-btn" onClick={sendMessage} data-tutorial="chat-send">
               <FiSend size={18} />
+            </button>
+          </div>
+          </div>
+
+          {/*  CONFIDENCE DISCLAIMER and TOGGLE */}
+          <div className="confidence-footer">
+            <small className="confidence-disclaimer">
+              Confidence reflects system context availability, not factual accuracy.
+            </small>
+
+            <button
+              className="confidence-toggle-link"
+              onClick={() => setShowAllConfidence((prev) => !prev)}
+            >
+              {showAllConfidence ? "Hide confidence details" : "Show confidence details"}
             </button>
           </div>
         </div>
