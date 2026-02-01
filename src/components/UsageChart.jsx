@@ -1,13 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
-  LineChart,
-  Line,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
-  ReferenceDot,
+  Cell,
 } from "recharts";
 import "../styles/homepage.css";
 
@@ -142,58 +142,98 @@ export default function UsageChart() {
     fetchQuestionsPerDay();
   }, [currentUser]);
 
+  const maxQuestions = useMemo(() => {
+    if (!data.length) return 0;
+    return data.reduce((max, d) => (d.questions > max ? d.questions : max), 0);
+  }, [data]);
+
+  const getIntensity = (value) => {
+    if (!maxQuestions) return 0;
+    return value / maxQuestions;
+  };
+
   return (
     <div className="usage-card">
       <h3>Weekly Usage</h3>
 
-      <ResponsiveContainer width="100%" height={280}>
-        <LineChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="day" />
-          <YAxis allowDecimals={false} />
-          <Tooltip
-          cursor={{ stroke: "rgba(255,255,255,0.2)" }}
-          content={({ active, payload, label }) => {
-            if (!active || !payload || !payload.length) return null;
-
-            const { questions, lastWeek } = payload[0].payload;
-
-            return (
-              <div className="custom-tooltip">
-                <strong>{label}</strong>
-                <div>This week: {questions}</div>
-                <div>Last week: {lastWeek}</div>
-              </div>
-            );
-          }}
+      <div style={{ width: "100%", height: 240 }}>
+        <BarChartWrapper
+          data={data}
+          peakDay={peakDay}
+          getIntensity={getIntensity}
         />
+      </div>
+    </div>
+  );
+}
 
+function BarChartWrapper({ data, peakDay, getIntensity }) {
+  return (
+    <div style={{ width: "100%", height: "100%" }}>
+      <svg width="0" height="0" aria-hidden="true">
+        <defs>
+          <pattern
+            id="peak-stripe"
+            width="6"
+            height="6"
+            patternUnits="userSpaceOnUse"
+            patternTransform="rotate(45)"
+          >
+            <rect width="6" height="6" fill="rgba(var(--heat-rgb), 0.15)" />
+            <line x1="0" y1="0" x2="0" y2="6" stroke="rgba(var(--heat-rgb), 0.55)" strokeWidth="2" />
+          </pattern>
+        </defs>
+      </svg>
 
-          <Line
-            type="monotone"
-            dataKey="questions"
-            stroke="#4a4a4a"
-            strokeWidth={3}
-            dot={{ r: 5 }}
-            activeDot={{ r: 7 }}
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={data} barCategoryGap={16} barGap={6}>
+          <CartesianGrid strokeDasharray="4 6" stroke="var(--chart-grid)" vertical={false} />
+          <XAxis
+            dataKey="day"
+            stroke="var(--chart-axis)"
+            tick={{ fill: "var(--chart-tick)", fontSize: 12 }}
+            tickLine={false}
+            axisLine={{ stroke: "var(--chart-axis)" }}
           />
+          <YAxis
+            allowDecimals={false}
+            stroke="var(--chart-axis)"
+            tick={{ fill: "var(--chart-tick)", fontSize: 12 }}
+            tickLine={false}
+            axisLine={{ stroke: "var(--chart-axis)" }}
+          />
+          <Tooltip
+            cursor={{ fill: "rgba(0,0,0,0)" }}
+            content={({ active, payload, label }) => {
+              if (!active || !payload || !payload.length) return null;
 
-          {peakDay && (
-            <ReferenceDot
-              x={peakDay.day}
-              y={peakDay.questions}
-              r={8}
-              fill="#0022ff"
-              stroke="none"
-              label={{
-                value: "Peak",
-                position: "top",
-                fill: "#0022ff",
-                fontWeight: 600,
-              }}
-            />
-          )}
-        </LineChart>
+              const { questions, lastWeek } = payload[0].payload;
+
+              return (
+                <div className="custom-tooltip">
+                  <strong>{label}</strong>
+                  <div>This week: {questions}</div>
+                  <div>Last week: {lastWeek}</div>
+                </div>
+              );
+            }}
+          />
+          <Bar dataKey="questions" radius={[10, 10, 6, 6]}>
+            {data.map((entry) => {
+              const intensity = getIntensity(entry.questions);
+              const alpha = entry.questions === 0 ? 0.12 : 0.2 + intensity * 0.5;
+              const isPeak = peakDay && peakDay.day === entry.day;
+              return (
+                <Cell
+                  key={entry.day}
+                  fill={isPeak ? "url(#peak-stripe)" : `rgba(var(--heat-rgb), ${alpha})`}
+                  stroke="var(--heat-border)"
+                  strokeWidth={1}
+                />
+              );
+            })}
+          </Bar>
+        </BarChart>
       </ResponsiveContainer>
     </div>
   );

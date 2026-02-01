@@ -5,7 +5,15 @@
   height: 100vh;
   width: 100vw;
   overflow: hidden;
-  background: var(--bg-primary);
+  background: radial-gradient(1200px 600px at 10% 0%, rgba(58, 110, 232, 0.18), transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, rgba(58, 110, 232, 0.12), transparent 55%),
+    var(--bg-gradient);
+}
+
+body.light-mode .homepage {
+  background: radial-gradient(1200px 600px at 10% 0%, rgba(37, 99, 235, 0.12), transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, rgba(37, 99, 235, 0.08), transparent 55%),
+    var(--bg-gradient);
 }
 
 /* === MAIN AREA === */
@@ -13,7 +21,7 @@
   flex: 1;
   height: 100vh;
   width: 100%;
-  background: var(--bg-primary);
+  background: transparent;
   color: var(--text-primary);
   padding: 30px 60px;
   box-sizing: border-box;
@@ -37,6 +45,7 @@
   font-weight: 700;
   color: var(--text-primary);
   margin: 0;
+  letter-spacing: 0.4px;
 }
 
 .dashboard-header div {
@@ -47,31 +56,33 @@
 
 .dashboard-header input {
   background: var(--bg-input);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--glass-border);
   padding: 10px 12px;
   border-radius: 8px;
   color: var(--text-primary);
   outline: none;
   width: 200px;
   font-size: 14px;
+  box-shadow: 0 0 0 1px rgba(99, 162, 255, 0.15) inset;
 }
 
 .dashboard-header input::placeholder {
-  color: var(--text-secondary);
+  color: var(--text-muted);
 }
 
 .dashboard-header button {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  color: var(--text-primary);
+  background: linear-gradient(135deg, #0b4bd8, #1b7dff);
+  border: 1px solid rgba(80, 160, 255, 0.5);
+  color: #f7fbff;
   font-weight: 500;
   padding: 10px 12px;
   border-radius: 8px;
   cursor: pointer;
+  box-shadow: 0 10px 24px rgba(12, 78, 216, 0.35);
 }
 
 .dashboard-header button:hover {
-  background: var(--border-color);
+  background: linear-gradient(135deg, #1b7dff, #0b4bd8);
 }
 
 /* === LOGO === */
@@ -101,18 +112,19 @@
 .card {
   flex: 1;
   min-width: 200px;
-  background: var(--bg-secondary);
+  background: var(--glass-bg);
   padding: 20px 0;
   border-radius: 14px;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--glass-border);
   text-align: center;
-  box-shadow: 0 4px 10px var(--shadow-color);
+  box-shadow: 0 12px 30px var(--shadow-color);
   transition: all 0.25s ease;
+  backdrop-filter: blur(12px);
 }
 
 .card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 15px var(--shadow-color);
+  transform: translateY(-3px);
+  box-shadow: 0 18px 40px rgba(4, 18, 46, 0.75);
 }
 
 .card h3 {
@@ -132,12 +144,13 @@
 /* === USAGE CHART / AGENT SECTION CONTAINERS === */
 .usage-card,
 .agent-section {
-  background: var(--bg-secondary);
+  background: var(--glass-bg);
   border-radius: 16px;
   padding: 25px 30px;
-  box-shadow: 0 4px 10px var(--shadow-color);
-  border: 1px solid var(--border-color);
+  box-shadow: 0 14px 36px var(--shadow-color);
+  border: 1px solid var(--glass-border);
   margin-bottom: 30px;
+  backdrop-filter: blur(14px);
 }
 
 .usage-card h3,
@@ -151,9 +164,9 @@
 
 /* === AGENT LIST === */
 .agent-list {
-  background: var(--bg-secondary);
+  background: var(--glass-bg);
   border-radius: 12px;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--glass-border);
   padding: 16px;
   margin-top: 24px;
 }
@@ -183,7 +196,7 @@
 
 .view-all-btn {
   background: transparent;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--glass-border);
   color: var(--text-primary);
   font-size: 13px;
   padding: 6px 12px;
@@ -215,7 +228,7 @@
 }
 
 .agent-row:hover {
-  background: rgba(255, 255, 255, 0.04); /* better for dark mode */
+  background: rgba(59, 130, 246, 0.12); /* better for dark mode */
 }
 
 body.light-mode .agent-row:hover {
@@ -276,11 +289,11 @@ body.light-mode .agent-row:hover {
 }
 
 body:not(.light-mode) .agent-row:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(59, 130, 246, 0.12);
 }
 
 .agent-row:not(:last-child) {
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--glass-border);
   border-radius: 0; /* keep clean separators between rows */
   padding-left: 0;
   padding-right: 0;
@@ -348,19 +361,20 @@ body:not(.light-mode) .agent-row:hover {
 /* === SETTINGS ICON BUTTON === */
 .settings-btn {
   position: absolute;
-  right: 40px;
-  background: var(--bg-input);
-  border: 1px solid var(--border-color);
+  right: -50px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
   border-radius: 12px;
   padding: 10px;
   cursor: pointer;
-  transition: 0.25s ease;
-  box-shadow: 0 0 8px var(--shadow-color);
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  box-shadow: 0 12px 26px var(--shadow-color);
+  backdrop-filter: blur(10px);
 }
 
 .settings-btn:hover {
-  background: var(--border-color);
-  transform: rotate(25deg);
+  background: var(--btn-bg-hover);
+  transform: translateY(-1px);
 }
 
 .settings-icon {
@@ -370,27 +384,251 @@ body:not(.light-mode) .agent-row:hover {
 
 /* === SCROLLBAR === */
 ::-webkit-scrollbar-thumb {
-  background-color: var(--border-color);
+  background-color: rgba(99, 162, 255, 0.45);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: var(--text-secondary);
+  background-color: rgba(129, 190, 255, 0.65);
 }
 
 .custom-tooltip {
-  background: #1f1f1f;
-  color: #ffffff;
+  background: var(--tooltip-bg);
+  color: var(--tooltip-text);
   padding: 10px 12px;
   border-radius: 8px;
   font-size: 13px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 16px 32px var(--shadow-color);
+  border: 1px solid var(--tooltip-border);
+}
+
+/* === HEATMAP CHART === */
+.usage-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.usage-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.legend-dots {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.legend-dots i {
+  width: 10px;
+  height: 10px;
+  border-radius: 4px;
+  background: rgba(var(--heat-rgb), 0.12);
+  border: 1px solid var(--heat-border);
+}
+
+.legend-dots i:nth-child(2) {
+  background: rgba(var(--heat-rgb), 0.35);
+}
+
+.legend-dots i:nth-child(3) {
+  background: rgba(var(--heat-rgb), 0.65);
+}
+
+.heatmap {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(64px, 1fr));
+  gap: 12px;
+  min-height: 220px;
+}
+
+.heatmap-cell {
+  position: relative;
+  border-radius: 14px;
+  padding: 14px 12px;
+  border: 1px solid var(--heat-border);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 86px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  background: var(--heat-empty);
+}
+
+.heatmap-cell.is-empty {
+  background: var(--heat-empty) !important;
+}
+
+.heatmap-cell:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px var(--shadow-color);
+}
+
+.heatmap-day {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.heatmap-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.heatmap-peak {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--chart-peak);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+@media (max-width: 900px) {
+  .heatmap {
+    grid-template-columns: repeat(4, minmax(64px, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .heatmap {
+    grid-template-columns: repeat(2, minmax(64px, 1fr));
+  }
 }
 
 .custom-tooltip strong {
   display: block;
   margin-bottom: 6px;
   font-weight: 600;
+}
+
+/* === LIGHT MODE MODERNIZATION === */
+body.light-mode .homepage {
+  background: radial-gradient(1200px 600px at 20% -10%, rgba(56, 189, 248, 0.18), transparent 60%),
+              radial-gradient(1000px 500px at 100% 0%, rgba(99, 102, 241, 0.15), transparent 55%),
+              linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+}
+
+body.light-mode .main {
+  color: #0f172a;
+}
+
+body.light-mode .dashboard-header h1 {
+  color: #0b1220;
+}
+
+body.light-mode .dashboard-header input {
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04), 0 0 0 3px rgba(56, 189, 248, 0.12);
+}
+
+body.light-mode .dashboard-header input:focus {
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04), 0 0 0 4px rgba(59, 130, 246, 0.18);
+}
+
+body.light-mode .dashboard-header button {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  border: 1px solid rgba(37, 99, 235, 0.35);
+  color: #f8fafc;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.16);
+}
+
+body.light-mode .card,
+body.light-mode .usage-card,
+body.light-mode .agent-section,
+body.light-mode .agent-list {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 6px 12px rgba(15, 23, 42, 0.05);
+  backdrop-filter: blur(16px);
+  border-radius: 18px;
+}
+
+body.light-mode .card:hover,
+body.light-mode .usage-card:hover,
+body.light-mode .agent-section:hover {
+  box-shadow: 0 8px 16px rgba(15, 23, 42, 0.06);
+  transform: translateY(-2px);
+}
+
+body.light-mode .section-title,
+body.light-mode .section-header h3,
+body.light-mode .usage-card h3,
+body.light-mode .agent-section h3 {
+  color: #0f172a;
+}
+
+body.light-mode .card h3 {
+  color: #64748b;
+  letter-spacing: 0.2px;
+}
+
+body.light-mode .card p {
+  color: #0f172a;
+}
+
+body.light-mode .view-all-btn {
+  background: rgba(15, 23, 42, 0.03);
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  color: #0f172a;
+}
+
+body.light-mode .view-all-btn:hover {
+  background: rgba(56, 189, 248, 0.12);
+}
+
+body.light-mode .agent-name {
+  color: #0f172a;
+}
+
+body.light-mode .agent-row:hover {
+  background: rgba(59, 130, 246, 0.08);
+}
+
+body.light-mode .agent-last-used,
+body.light-mode .empty-text,
+body.light-mode .more {
+  color: #475569;
+}
+
+body.light-mode .settings-btn,
+body.light-mode .mailbox-btn {
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+}
+
+body.light-mode .settings-btn:hover,
+body.light-mode .mailbox-btn:hover {
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.12);
+}
+
+body.light-mode .mailbox-btn,
+body.light-mode .settings-btn {
+  background: #ffffff;
+  border: 1px solid #111827;
+  color: #111827;
+}
+
+body.light-mode .mailbox-btn svg,
+body.light-mode .settings-btn .settings-icon {
+  color: #111827;
+}
+
+body.light-mode ::-webkit-scrollbar-thumb {
+  background-color: rgba(15, 23, 42, 0.2);
+}
+
+body.light-mode ::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(15, 23, 42, 0.3);
 }
 
 /*RESPONSIVE ADJUSTMENTS – HOMEPAGE*/
@@ -518,21 +756,22 @@ body:not(.light-mode) .agent-row:hover {
 
 .mailbox-btn {
   position: absolute;
-  right: 92px; /* sits left of settings icon (settings is right:40px) */
-  background: var(--bg-input);
-  border: 1px solid var(--border-color);
+  right: 24px; /* sits left of settings icon */
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
   border-radius: 12px;
   padding: 10px;
   cursor: pointer;
-  transition: 0.25s ease;
-  box-shadow: 0 0 8px var(--shadow-color);
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  box-shadow: 0 12px 26px var(--shadow-color);
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 
 .mailbox-btn:hover {
-  background: var(--border-color);
+  background: var(--btn-bg-hover);
+  transform: translateY(-1px);
 }
 
 /* 🔴 Red badge on top-right of mailbox icon */
