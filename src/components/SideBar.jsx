@@ -24,13 +24,13 @@ export default function SideBar() {
   const [conversations, setConversations] = useState([]);
   const [menuOpenId, setMenuOpenId] = useState(null);
 
-  // ✅ show real user email
+  //  show real user email
   const currentUser = useMemo(
     () => localStorage.getItem("currentUser") || "",
     []
   );
 
-  // ✅ dropdown for logout
+  // dropdown for logout
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef(null);
 
@@ -83,7 +83,7 @@ export default function SideBar() {
     loadHistory();
   }, [isAgentChat, agentId]);
 
-  // ✏️ Rename chat
+  //  Rename chat
   const renameConversation = async (id, currentTitle) => {
     const newTitle = prompt("Rename chat", currentTitle);
     if (!newTitle) return;
@@ -95,7 +95,7 @@ export default function SideBar() {
     );
   };
 
-  // 🗑 Delete chat
+  // Delete chat
   const deleteConversation = async (id) => {
     const confirmDelete = window.confirm(
       "Delete this chat? This cannot be undone."
@@ -111,7 +111,7 @@ export default function SideBar() {
     }
   };
 
-  // ✅ Logout
+  // Logout
   const logout = () => {
     const ok = window.confirm("Log out?");
     if (!ok) return;
@@ -201,7 +201,7 @@ export default function SideBar() {
           + Create New Agent
         </button>
 
-        {/* ✅ CREATE GROUP (same style as create agent) */}
+        {/*  CREATE GROUP (same style as create agent) */}
         <button
           className="create-agent-btn"
           onClick={() => {
@@ -214,7 +214,7 @@ export default function SideBar() {
 
         {/* MAIN MENU */}
         <div className="menu">
-          {/* ❌ Removed Explore */}
+          {/*  Removed Explore */}
 
           <button
             className="menu-btn"
