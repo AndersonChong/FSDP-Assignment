@@ -6,11 +6,12 @@ import {
   where,
   orderBy,
   getDocs,
+  onSnapshot,
   doc,
   updateDoc,
   deleteDoc,
 } from "firebase/firestore";
-import { FiMenu, FiX, FiMoreHorizontal } from "react-icons/fi";
+import { FiMenu, FiX, FiMoreHorizontal, FiPlus } from "react-icons/fi";
 import { db } from "../firebase";
 import { useTheme } from "../context/ThemeContext";
 import TutorialOverlay from "./TutorialOverlay";
@@ -23,6 +24,7 @@ export default function SideBar() {
 
   const [open, setOpen] = useState(false);
   const [conversations, setConversations] = useState([]);
+  const [groupConversations, setGroupConversations] = useState([]);
   const [menuOpenId, setMenuOpenId] = useState(null);
   const [pendingTutorialKey, setPendingTutorialKey] = useState(null);
 
@@ -38,6 +40,8 @@ export default function SideBar() {
 
   const isAgentChat = location.pathname.startsWith("/agent-chat/");
   const agentId = isAgentChat ? location.pathname.split("/")[2] : null;
+  const isGroupChat = location.pathname.startsWith("/group-chat/");
+  const groupId = isGroupChat ? location.pathname.split("/")[2] : null;
 
   const tutorialKey = useMemo(() => {
     if (location.pathname.startsWith("/agent-chat/")) return "chat";
@@ -180,6 +184,38 @@ export default function SideBar() {
     loadHistory();
   }, [isAgentChat, agentId]);
 
+  // Load group chat history (only for group chat view)
+  useEffect(() => {
+    if (!isGroupChat || !groupId) {
+      setGroupConversations([]);
+      return;
+    }
+
+    const q = query(
+      collection(db, "groupConversations"),
+      where("groupId", "==", groupId),
+      orderBy("updatedAt", "desc")
+    );
+
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        setGroupConversations(
+          snap.docs.map((d) => ({
+            id: d.id,
+            title: d.data().title || "New chat",
+            lastMessage: d.data().lastMessage || "",
+          }))
+        );
+      },
+      (error) => {
+        console.error("Failed to load group conversations:", error);
+      }
+    );
+
+    return () => unsub();
+  }, [isGroupChat, groupId]);
+
   //  Rename chat
   const renameConversation = async (id, currentTitle) => {
     const newTitle = prompt("Rename chat", currentTitle);
@@ -205,6 +241,34 @@ export default function SideBar() {
 
     if (id === activeConversationId) {
       navigate(`/agent-chat/${agentId}`);
+    }
+  };
+
+  // Rename group conversation
+  const renameGroupConversation = async (id, currentTitle) => {
+    const newTitle = prompt("Rename chat", currentTitle);
+    if (!newTitle) return;
+
+    await updateDoc(doc(db, "groupConversations", id), { title: newTitle });
+
+    setGroupConversations((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, title: newTitle } : c))
+    );
+  };
+
+  // Delete group conversation
+  const deleteGroupConversation = async (id) => {
+    const confirmDelete = window.confirm(
+      "Delete this chat? This cannot be undone."
+    );
+    if (!confirmDelete) return;
+
+    await deleteDoc(doc(db, "groupConversations", id));
+
+    setGroupConversations((prev) => prev.filter((c) => c.id !== id));
+
+    if (id === activeConversationId) {
+      navigate(`/group-chat/${groupId}`);
     }
   };
 
@@ -359,9 +423,24 @@ export default function SideBar() {
         </div>
 
         {/* CHAT HISTORY */}
-        {isAgentChat && conversations.length > 0 && (
+        {isAgentChat && (
           <div className="chat-history">
-            <h4 className="history-title">Your chats</h4>
+            <div className="history-header">
+              <h4 className="history-title">Your chats</h4>
+              <button
+                type="button"
+                className="new-chat-btn"
+                onClick={() => {
+                  navigate(`/agent-chat/${agentId}`);
+                  setOpen(false);
+                }}
+                title="New chat"
+                aria-label="New chat"
+              >
+                <FiPlus size={14} />
+                New chat
+              </button>
+            </div>
 
             {conversations.map((c) => (
               <div
@@ -392,6 +471,68 @@ export default function SideBar() {
                       <button
                         className="danger"
                         onClick={() => deleteConversation(c.id)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {isGroupChat && (
+          <div className="chat-history">
+            <div className="history-header">
+              <h4 className="history-title">Group chat history</h4>
+              <button
+                type="button"
+                className="new-chat-btn"
+                onClick={() => {
+                  navigate(`/group-chat/${groupId}`);
+                  setOpen(false);
+                }}
+                title="New chat"
+                aria-label="New chat"
+              >
+                <FiPlus size={14} />
+                New chat
+              </button>
+            </div>
+
+            {groupConversations.map((c) => (
+              <div
+                key={c.id}
+                className={`history-item ${
+                  c.id === activeConversationId ? "active" : ""
+                }`}
+                onClick={() =>
+                  navigate(`/group-chat/${groupId}?conversationId=${c.id}`)
+                }
+              >
+                <div className="history-text-block">
+                  <span className="history-text">{c.title}</span>
+                  <span className="history-subtext">{c.lastMessage}</span>
+                </div>
+
+                <div
+                  className="history-more"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMenuOpenId(menuOpenId === c.id ? null : c.id);
+                  }}
+                >
+                  <FiMoreHorizontal />
+
+                  {menuOpenId === c.id && (
+                    <div className="history-dropdown">
+                      <button onClick={() => renameGroupConversation(c.id, c.title)}>
+                        Rename
+                      </button>
+                      <button
+                        className="danger"
+                        onClick={() => deleteGroupConversation(c.id)}
                       >
                         Delete
                       </button>

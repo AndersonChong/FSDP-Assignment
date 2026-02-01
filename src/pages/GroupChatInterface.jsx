@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import Sidebar from "../components/SideBar";
 import GroupAISelector from "../components/GroupAISelector";
 import KnowledgeBase from "../components/KnowledgeBase";
@@ -28,6 +28,9 @@ import { queryAgent } from "../api"; // backend chat call
 export default function GroupChatInterface() {
   const { groupId } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const urlConversationId = searchParams.get("conversationId");
+  const [conversationId, setConversationId] = useState(null);
 
   const currentUser = localStorage.getItem("currentUser") || "user";
 
@@ -51,6 +54,16 @@ export default function GroupChatInterface() {
   const [showAllConfidence, setShowAllConfidence] = useState(false);
 
   const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (urlConversationId) {
+      setConversationId(urlConversationId);
+    } else {
+      setConversationId(null);
+      setMessages([]);
+    }
+  }, [urlConversationId]);
 
   /* =========================
      Helpers for file upload
@@ -161,16 +174,17 @@ export default function GroupChatInterface() {
   }, [activeAgentId]);
 
   /* =========================
-     Live messages for group
+     Live messages for group conversation
      Collection: groupMessages
-     Fields: groupId, sender, text, agentId, createdAt, file, confidence
+     Fields: groupId, conversationId, sender, text, agentId, createdAt, file, confidence
   ========================= */
   useEffect(() => {
-    if (!groupId) return;
+    if (!groupId || !conversationId) return;
 
     const q = query(
       collection(db, "groupMessages"),
       where("groupId", "==", groupId),
+      where("conversationId", "==", conversationId),
       orderBy("createdAt", "asc")
     );
 
@@ -198,7 +212,7 @@ export default function GroupChatInterface() {
     );
 
     return () => unsub();
-  }, [groupId]);
+  }, [groupId, conversationId]);
 
   /* =========================
      Auto-scroll
@@ -207,7 +221,28 @@ export default function GroupChatInterface() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  useEffect(() => {
+    if (!input && inputRef.current) {
+      inputRef.current.style.height = "auto";
+    }
+  }, [input]);
+
   const canChat = useMemo(() => !!activeAgentId, [activeAgentId]);
+
+  const createConversationIfNeeded = async (firstMessage) => {
+    if (conversationId) return conversationId;
+
+    const convoRef = await addDoc(collection(db, "groupConversations"), {
+      groupId,
+      title: firstMessage.slice(0, 40),
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      lastMessage: firstMessage.slice(0, 120),
+    });
+
+    setConversationId(convoRef.id);
+    return convoRef.id;
+  };
 
   /* =========================
      Selector -> Done
@@ -239,6 +274,9 @@ export default function GroupChatInterface() {
 
     const userMessage = input;
     setInput("");
+    if (inputRef.current) {
+      inputRef.current.style.height = "auto";
+    }
 
     let fileData = null;
     if (selectedFile) {
@@ -249,15 +287,29 @@ export default function GroupChatInterface() {
 
     const imageBase64 = fileData?.base64 || null;
 
+    // ensure conversation exists
+    const activeConversationId = await createConversationIfNeeded(userMessage);
+
     // write user message to Firestore
     await addDoc(collection(db, "groupMessages"), {
       groupId,
+      conversationId: activeConversationId,
       agentId: activeAgentId,
       sender: currentUser,
       text: userMessage,
       file: fileData,
       createdAt: serverTimestamp(),
     });
+
+    // update conversation with user message
+    try {
+      await updateDoc(doc(db, "groupConversations", activeConversationId), {
+        updatedAt: serverTimestamp(),
+        lastMessage: userMessage.slice(0, 120),
+      });
+    } catch (e) {
+      // ignore
+    }
 
     try {
       const res = await queryAgent(activeAgentId, userMessage, imageBase64);
@@ -267,12 +319,22 @@ export default function GroupChatInterface() {
 
       await addDoc(collection(db, "groupMessages"), {
         groupId,
+        conversationId: activeConversationId,
         agentId: activeAgentId,
         sender: "assistant",
         text: aiText,
         confidence: aiConfidence,
         createdAt: serverTimestamp(),
       });
+
+      try {
+        await updateDoc(doc(db, "groupConversations", activeConversationId), {
+          updatedAt: serverTimestamp(),
+          lastMessage: aiText.slice(0, 120),
+        });
+      } catch (e) {
+        // ignore
+      }
 
       // optional: update group updatedAt for sorting in your group list
       try {
@@ -288,11 +350,21 @@ export default function GroupChatInterface() {
 
       await addDoc(collection(db, "groupMessages"), {
         groupId,
+        conversationId: activeConversationId,
         agentId: activeAgentId,
         sender: "assistant",
         text: "Something went wrong.",
         createdAt: serverTimestamp(),
       });
+
+      try {
+        await updateDoc(doc(db, "groupConversations", activeConversationId), {
+          updatedAt: serverTimestamp(),
+          lastMessage: "Something went wrong.",
+        });
+      } catch (e) {
+        // ignore
+      }
     }
   };
 
@@ -377,6 +449,16 @@ export default function GroupChatInterface() {
             </div>
           )}
 
+          {activeAgentId && !conversationId && messages.length === 0 && (
+            <div className="empty-chat">
+              <div className="empty-avatar" style={{ backgroundColor: "#e6e6e6" }}>
+                💬
+              </div>
+              <h3>Start a new conversation</h3>
+              <p>Send a message to create a new group chat thread.</p>
+            </div>
+          )}
+
           {messages.map((msg) => (
             <GroupMessageBubble
               key={msg.id}
@@ -390,92 +472,105 @@ export default function GroupChatInterface() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* CONFIDENCE DISCLAIMER and TOGGLE */}
-        <div className="confidence-footer">
-          <small className="confidence-disclaimer">
-            Confidence reflects system context availability, not factual accuracy.
-          </small>
-
-          <button
-            className="confidence-toggle-link"
-            onClick={() => setShowAllConfidence((prev) => !prev)}
-          >
-            {showAllConfidence ? "Hide confidence details" : "Show confidence details"}
-          </button>
-        </div>
-
-        {/* === INPUT BOX === */}
-        <div className="input-area">
-          {selectedFile && (
-            <div className="file-preview-card">
-              {filePreview?.type === "image" ? (
-                <img src={filePreview.url} alt="preview" />
-              ) : (
-                <div className="file-card">
-                  <div className="file-icon">{getFileIcon(selectedFile.type)}</div>
-                  <div className="file-meta">
-                    <div className="file-name">{selectedFile.name}</div>
-                    <div className="file-size">
-                      {(selectedFile.size / 1024).toFixed(1)} KB
+        <div className="input-footer">
+          {/* === INPUT BOX === */}
+          <div className="input-area">
+            {selectedFile && (
+              <div className="file-preview-card">
+                {filePreview?.type === "image" ? (
+                  <img src={filePreview.url} alt="preview" />
+                ) : (
+                  <div className="file-card">
+                    <div className="file-icon">{getFileIcon(selectedFile.type)}</div>
+                    <div className="file-meta">
+                      <div className="file-name">{selectedFile.name}</div>
+                      <div className="file-size">
+                        {(selectedFile.size / 1024).toFixed(1)} KB
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              <button
-                className="remove-file"
-                onClick={() => {
-                  setSelectedFile(null);
-                  setFilePreview(null);
-                }}
+                <button
+                  className="remove-file"
+                  onClick={() => {
+                    setSelectedFile(null);
+                    setFilePreview(null);
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
+            <div className="input-box">
+              {/* File upload */}
+              <label
+                className="input-icon upload-icon"
+                style={{ opacity: canChat ? 1 : 0.5 }}
               >
-                ✕
-              </button>
-            </div>
-          )}
+                <FiUpload size={20} />
+                <input
+                  type="file"
+                  hidden
+                  disabled={!canChat}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
 
-          <div className="input-box">
-            {/* File upload */}
-            <label
-              className="input-icon upload-icon"
-              style={{ opacity: canChat ? 1 : 0.5 }}
-            >
-              <FiUpload size={20} />
-              <input
-                type="file"
-                hidden
+                    setSelectedFile(file);
+
+                    if (file.type.startsWith("image/")) {
+                      setFilePreview({
+                        type: "image",
+                        url: URL.createObjectURL(file),
+                      });
+                    } else {
+                      setFilePreview({ type: "file" });
+                    }
+                  }}
+                />
+              </label>
+
+              {/* Text input */}
+              <textarea
+                ref={inputRef}
+                rows={1}
+                placeholder={canChat ? "Type your message..." : "Select an AI first..."}
+                value={input}
                 disabled={!canChat}
                 onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-
-                  setSelectedFile(file);
-
-                  if (file.type.startsWith("image/")) {
-                    setFilePreview({
-                      type: "image",
-                      url: URL.createObjectURL(file),
-                    });
-                  } else {
-                    setFilePreview({ type: "file" });
+                  const value = e.target.value;
+                  setInput(value);
+                  e.target.style.height = "auto";
+                  e.target.style.height = `${Math.min(e.target.scrollHeight, 160)}px`;
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
                   }
                 }}
               />
-            </label>
 
-            {/* Text input */}
-            <input
-              type="text"
-              placeholder={canChat ? "Type your message..." : "Select an AI first..."}
-              value={input}
-              disabled={!canChat}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-            />
+              {/* Send button */}
+              <button className="send-btn" onClick={sendMessage} disabled={!canChat}>
+                <FiSend size={18} />
+              </button>
+            </div>
+          </div>
 
-            {/* Send button */}
-            <button className="send-btn" onClick={sendMessage} disabled={!canChat}>
-              <FiSend size={18} />
+          {/* CONFIDENCE DISCLAIMER and TOGGLE */}
+          <div className="confidence-footer">
+            <small className="confidence-disclaimer">
+              Confidence reflects system context availability, not factual accuracy.
+            </small>
+
+            <button
+              className="confidence-toggle-link"
+              onClick={() => setShowAllConfidence((prev) => !prev)}
+            >
+              {showAllConfidence ? "Hide confidence details" : "Show confidence details"}
             </button>
           </div>
         </div>
