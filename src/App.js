@@ -1,4 +1,5 @@
 import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import HelpPage from "./pages/HelpPage";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 
@@ -10,13 +11,19 @@ import CreateAgentPage from "./pages/CreateAgent";
 import CreateGroupChat from "./pages/CreateGroupChat";
 import ChatInterface from "./pages/ChatInterface";
 import ViewAgents from "./pages/ViewAgents";
+import HelpPage from "./pages/HelpPage";
 import GroupChatInterface from "./pages/GroupChatInterface"; // ✅ add this
 
 import UserForm from "./components/UserForm";
 
+import CameraEmotionToggle from "./components/CameraEmotionToggle";
+
 function App() {
   return (
     <Router>
+      {/* Global camera toggle available everywhere */}
+      <CameraEmotionToggle />
+
       <Routes>
         {/* Default entry */}
         <Route path="/" element={<Navigate to="/signin" replace />} />
