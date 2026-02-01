@@ -3,38 +3,80 @@
 
 /* --- DARK MODE (DEFAULT) --- */
 :root {
-  --bg-primary: #18181b;        
-  --bg-secondary: #1f1f23;     
-  --bg-input: #2a2a2e;
-  --text-primary: #f4f4f5;
-  --text-secondary: #a1a1aa;
-  --text-muted: #71717a;
-  --text-inverted: #09090b;
-  --border-color: #2f2f36;
-  --shadow-color: rgba(0, 0, 0, 0.35);
-  --action-btn: #3b82f6; 
-  --btn-bg: rgba(255, 255, 255, 0.06);
-  --btn-bg-hover: rgba(255, 255, 255, 0.12);
-  --btn-border: rgba(255, 255, 255, 0.14);
+  --bg-primary: #0b0f1a;
+  --bg-secondary: #121826;
+  --bg-input: #151c2e;
+  --text-primary: #e6eaf2;
+  --text-secondary: #a1a9b8;
+  --text-muted: #7c8799;
+  --text-inverted: #070b16;
+  --border-color: #1f2937;
+  --shadow-color: rgba(2, 6, 23, 0.28);
+  --action-btn: #2563eb;
+  --btn-bg: rgba(37, 99, 235, 0.12);
+  --btn-bg-hover: rgba(37, 99, 235, 0.2);
+  --btn-border: rgba(59, 130, 246, 0.24);
+  --glass-bg: rgba(18, 24, 38, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --bg-hover: rgba(37, 99, 235, 0.14);
+  --bg-active: rgba(37, 99, 235, 0.2);
+  --bg-gradient: radial-gradient(1200px 700px at 10% 0%, rgba(58, 110, 232, 0.22), transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, rgba(58, 110, 232, 0.14), transparent 55%),
+    linear-gradient(180deg, #0b0f1a 0%, #0e1322 100%);
+  --chart-grid: rgba(255, 255, 255, 0.08);
+  --chart-axis: rgba(255, 255, 255, 0.2);
+  --chart-tick: rgba(229, 233, 242, 0.7);
+  --chart-line: rgba(229, 233, 242, 0.55);
+  --chart-dot: #e5e9f2;
+  --chart-peak: #3a6ee8;
+  --tooltip-bg: rgba(18, 24, 38, 0.96);
+  --tooltip-text: #e5e9f2;
+  --tooltip-border: rgba(255, 255, 255, 0.08);
+  --heat-rgb: 58, 110, 232;
+  --heat-empty: rgba(255, 255, 255, 0.04);
+  --heat-border: rgba(255, 255, 255, 0.08);
 }
 
 /* --- LIGHT MODE --- */
 body.light-mode {
-  --bg-primary: #ffffff;        
-  --bg-secondary: #ededed;      
-  --bg-input: #d9d9d9;
-  --text-primary: #18181b;
-  --text-secondary: #52525b;
-  --text-muted: #71717a;
-  --border-color: #e4e6eb;
-  --shadow-color: rgba(0, 0, 0, 0.06);
+  --bg-primary: #f6f7fb;
+  --bg-secondary: #ffffff;
+  --bg-input: #f2f4f8;
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-muted: #6b7280;
+  --border-color: #e5e7eb;
+  --shadow-color: rgba(15, 23, 42, 0.04);
   --action-btn: #2563eb;
-  --btn-bg: #f1f2f4;
-  --btn-bg-hover: #e6e8ec;
-  --btn-border: #d6d9de;
+  --btn-bg: rgba(37, 99, 235, 0.08);
+  --btn-bg-hover: rgba(37, 99, 235, 0.12);
+  --btn-border: rgba(37, 99, 235, 0.2);
+  --glass-bg: rgba(255, 255, 255, 0.92);
+  --glass-border: rgba(15, 23, 42, 0.08);
+  --bg-hover: rgba(37, 99, 235, 0.12);
+  --bg-active: rgba(37, 99, 235, 0.18);
+  --bg-gradient: radial-gradient(1200px 700px at 10% 0%, rgba(37, 99, 235, 0.16), transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, rgba(37, 99, 235, 0.1), transparent 55%),
+    linear-gradient(180deg, #f6f7fb 0%, #eef1f6 100%);
+  --chart-grid: rgba(15, 23, 42, 0.12);
+  --chart-axis: rgba(15, 23, 42, 0.2);
+  --chart-tick: rgba(17, 24, 39, 0.7);
+  --chart-line: rgba(17, 24, 39, 0.45);
+  --chart-dot: #111827;
+  --chart-peak: #2563eb;
+  --tooltip-bg: #ffffff;
+  --tooltip-text: #0f172a;
+  --tooltip-border: rgba(15, 23, 42, 0.08);
+  --heat-rgb: 37, 99, 235;
+  --heat-empty: rgba(15, 23, 42, 0.04);
+  --heat-border: rgba(15, 23, 42, 0.08);
 }
 
 /* BASE */
+
+* {
+  box-sizing: border-box;
+}
 
 html,
 body {
@@ -46,7 +88,7 @@ body {
   font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", sans-serif;
 
-  background: var(--bg-primary);
+  background: var(--bg-gradient);
   color: var(--text-primary);
 
   overflow-x: hidden;
@@ -58,6 +100,7 @@ body {
   width: 100%;
   display: flex;
   flex-direction: column;
+  background: var(--bg-gradient);
 }
 
 /* RESET */
@@ -67,12 +110,31 @@ button {
   color: inherit;
   background: transparent; 
   border: none;
+  border-radius: 12px;
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
 }
 
 
-input {
+input,
+textarea,
+select {
   font-family: inherit;
   color: inherit;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 10px 12px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-muted);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
 }
 
 /*ACCESSIBILITY*/
@@ -137,15 +199,4 @@ input {
     transition: none !important;
     animation: none !important;
   }
-}
-:root {
-  /* ...your existing tokens... */
-  --bg-hover: rgba(255, 255, 255, 0.08);
-  --bg-active: rgba(255, 255, 255, 0.12);
-}
-
-body.light-mode {
-  /* ...your existing tokens... */
-  --bg-hover: rgba(0, 0, 0, 0.06);
-  --bg-active: rgba(0, 0, 0, 0.10);
 }

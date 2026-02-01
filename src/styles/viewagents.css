@@ -2,9 +2,13 @@
   display: flex;
   height: 100vh;
   width: 100%;
-  background: var(--bg-primary);
+  background: var(--bg-gradient);
   color: var(--text-primary);
   overflow-x: hidden;
+}
+
+body.light-mode .view-layout {
+  background: var(--bg-gradient);
 }
 
 .view-panel {
@@ -13,6 +17,15 @@
   overflow-y: auto;
   overflow-x: hidden;
   box-sizing: border-box;
+}
+
+.view-panel::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.35);
+  border-radius: 999px;
+}
+
+body.light-mode .view-panel::-webkit-scrollbar-thumb {
+  background-color: rgba(15, 23, 42, 0.18);
 }
 
 /* --- LOGO --- */
@@ -58,6 +71,13 @@ body.light-mode .logo {
   color: var(--text-primary);
   font-size: 16px;
   margin-bottom: 25px;
+  box-shadow: 0 4px 10px rgba(2, 6, 23, 0.12);
+}
+
+body.light-mode .view-search {
+  background: #f8fafc;
+  border-color: #e5e7eb;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.06);
 }
 
 .view-search::placeholder {
@@ -80,6 +100,14 @@ body.light-mode .logo {
   border: 1px solid var(--border-color);
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  box-shadow: 0 4px 10px rgba(2, 6, 23, 0.12);
+}
+
+body.light-mode .filter-btn {
+  background: #ffffff;
+  border-color: #e5e7eb;
+  color: #111827;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.05);
 }
 
 .filter-btn:hover {
@@ -89,6 +117,12 @@ body.light-mode .logo {
 .filter-btn.active {
   background: var(--text-primary);
   color: var(--bg-primary);
+}
+
+body.light-mode .filter-btn.active {
+  background: #111827;
+  color: #ffffff;
+  border-color: #111827;
 }
 
 /* ✅ Dark mode: keep active pill readable (light pill, dark text) */
@@ -109,49 +143,70 @@ body:not(.light-mode) .filter-btn.active {
 /* --- AGENT CARD --- */
 .agent-card {
   position: relative; /* 🔥 REQUIRED for status badge */
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.72), rgba(15, 23, 42, 0.55));
+  border: 1px solid rgba(148, 163, 184, 0.18);
   padding: 18px;
-  border-radius: 12px;
+  border-radius: 18px;
   display: flex;
   align-items: center;
   gap: 18px;
   cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 8px 18px rgba(2, 6, 23, 0.28);
+  backdrop-filter: blur(16px);
 }
 
 /* ✅ Fix hover (was var(--border-color) which can look wrong in dark mode) */
 .agent-card:hover {
-  background: var(--bg-hover);
-  border-color: var(--border-color);
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.65));
+  border-color: rgba(148, 163, 184, 0.28);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 22px rgba(2, 6, 23, 0.32);
 }
 
 /* ✅ Dark mode: make cards "sidebar-like" (not pure black, not white) */
 body:not(.light-mode) .agent-card {
-  background: rgba(255, 255, 255, 0.06);  /* soft dark panel */
-  border-color: rgba(255, 255, 255, 0.10);
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.55));
+  border-color: rgba(148, 163, 184, 0.16);
 }
 
 body:not(.light-mode) .agent-card:hover {
-  background: rgba(255, 255, 255, 0.09);
-  border-color: rgba(255, 255, 255, 0.14);
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.65));
+  border-color: rgba(148, 163, 184, 0.26);
+}
+
+body.light-mode .agent-card {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.06);
+}
+
+body.light-mode .agent-card:hover {
+  background: rgba(248, 250, 252, 0.95);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
 }
 
 /* Icon container */
 .agent-image-box {
   width: 90px;
   height: 90px;
-  background: var(--bg-input);
-  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.35);
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 1px solid rgba(148, 163, 184, 0.2);
 }
 
 /* ✅ Dark mode: icon box shouldn’t look like a light card */
 body:not(.light-mode) .agent-image-box {
   background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+body.light-mode .agent-image-box {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
 }
 
 .agent-img {
@@ -162,11 +217,14 @@ body:not(.light-mode) .agent-image-box {
 .agent-info h3 {
   margin: 0;
   color: var(--text-primary);
+  font-size: 18px;
+  font-weight: 700;
 }
 
 .agent-info p {
   margin: 2px 0 6px 0;
   color: var(--text-secondary);
+  font-size: 14px;
 }
 
 .agent-created {
@@ -197,15 +255,16 @@ body:not(.light-mode) .agent-image-box {
   cursor: pointer;
   user-select: none;
   z-index: 2;
+  box-shadow: 0 4px 10px rgba(2, 6, 23, 0.16);
 }
 
 .status-badge.active {
-  background: #22c55e;
-  color: #000;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: #081a0f;
 }
 
 .status-badge.disabled {
-  background: #6b7280;
+  background: linear-gradient(135deg, #94a3b8, #64748b);
   color: #fff;
 }
 

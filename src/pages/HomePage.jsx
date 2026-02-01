@@ -220,7 +220,7 @@ export default function HomePage() {
           <div
             style={{
               position: "absolute",
-              right: "40px",
+              right: "50px",
               display: "flex",
               gap: "14px",
               alignItems: "center",
