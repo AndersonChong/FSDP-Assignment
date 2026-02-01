@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 import asyncio
 from fastapi import Response
 import json
+from langdetect import detect, LangDetectException
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 CONF_PATH = os.path.join(BASE_DIR, "confidence_rules.json")
@@ -23,7 +24,92 @@ client = OpenAI(
     timeout=10
 )
 
-def build_system_prompt(agent: dict, relevant_memory=None) -> str:
+def _language_name(lang_code: str) -> str:
+    mapping = {
+        "en": "English",
+        "es": "Spanish",
+        "zh-cn": "Chinese",
+        "zh": "Chinese",
+        "fr": "French",
+        "de": "German",
+        "ja": "Japanese",
+        "ko": "Korean",
+        "it": "Italian",
+        "pt": "Portuguese",
+        "ru": "Russian",
+        "ar": "Arabic",
+        "hi": "Hindi",
+        "th": "Thai",
+        "vi": "Vietnamese",
+        "id": "Indonesian",
+        "ms": "Malay",
+        "tr": "Turkish",
+        "nl": "Dutch",
+        "sv": "Swedish",
+        "no": "Norwegian",
+        "da": "Danish",
+        "fi": "Finnish",
+        "pl": "Polish",
+        "uk": "Ukrainian",
+        "el": "Greek",
+        "he": "Hebrew",
+    }
+    return mapping.get(lang_code, lang_code or "English")
+
+
+def detect_language(text: str) -> str:
+    if not text:
+        return "English"
+    cleaned = " ".join(text.strip().split())
+    lowered = cleaned.lower()
+
+    # Short greeting heuristics (langdetect is unreliable for very short text)
+    greeting_map = {
+        "hello": "English",
+        "hi": "English",
+        "hey": "English",
+        "yo": "English",
+        "sup": "English",
+        "hola": "Spanish",
+        "bonjour": "French",
+        "salut": "French",
+        "ciao": "Italian",
+        "hallo": "German",
+        "guten tag": "German",
+        "ola": "Portuguese",
+        "oi": "Portuguese",
+        "hej": "Swedish",
+        "hei": "English",
+    }
+
+    if len(lowered) <= 20:
+        if lowered in greeting_map:
+            return greeting_map[lowered]
+
+        # If it's short ASCII-only text and not a known greeting, default to English
+        if all(ord(ch) < 128 for ch in lowered):
+            return "English"
+
+    # Unicode script heuristics for CJK languages (more reliable for short text)
+    for ch in text:
+        code = ord(ch)
+        # Hangul Syllables/Hangul Jamo -> Korean
+        if 0xAC00 <= code <= 0xD7AF or 0x1100 <= code <= 0x11FF or 0x3130 <= code <= 0x318F:
+            return "Korean"
+        # Hiragana/Katakana -> Japanese
+        if 0x3040 <= code <= 0x309F or 0x30A0 <= code <= 0x30FF:
+            return "Japanese"
+        # CJK Unified Ideographs -> Chinese (default)
+        if 0x4E00 <= code <= 0x9FFF:
+            return "Chinese"
+    try:
+        code = detect(text)
+        return _language_name(code)
+    except LangDetectException:
+        return "English"
+
+
+def build_system_prompt(agent: dict, relevant_memory=None, user_language: str = "English") -> str:
     specialties = ", ".join(agent.get("specialties", []))
     persona = agent.get("persona", "")
     summary = agent.get("summary", "")
@@ -42,6 +128,7 @@ def build_system_prompt(agent: dict, relevant_memory=None) -> str:
     - Always respond in the SAME language as the user's question
     - If the user switches languages, switch with them
     - Do NOT mention language detection
+    - Respond ONLY in this language: {user_language}
 
     Persona:
     {persona}
@@ -202,9 +289,11 @@ async def chat(req: ChatRequest):
     is_greeting = user_text in CONF_RULES["greetings"]
 
     # 3. Generate AI reply FIRST
+    user_language = detect_language(req.user_message)
+
     reply = await asyncio.to_thread(
         call_openai_sync,
-        build_system_prompt(agent, relevant_memory),
+        build_system_prompt(agent, relevant_memory, user_language),
         req.user_message,
         req.image_base64
     )

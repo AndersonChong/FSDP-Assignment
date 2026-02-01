@@ -11,6 +11,13 @@
   z-index: 50;
 }
 
+body:not(.light-mode) .invite-inbox {
+  background: #0f172a;
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+  color: #e5e7eb;
+}
+
 /* ✅ Title row (icon + title) */
 .invite-header {
   display: flex;
@@ -30,6 +37,10 @@
   font-weight: 600;
 }
 
+body:not(.light-mode) .invite-title {
+  color: #e5e7eb;
+}
+
 /* ✅ Icon container so badge can be positioned */
 .invite-icon-wrap {
   position: relative;
@@ -41,6 +52,15 @@
   border-radius: 10px;
   background: #f3f4f6;
   border: 1px solid #e5e5e5;
+}
+
+body:not(.light-mode) .invite-icon-wrap {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+body:not(.light-mode) .invite-icon-wrap svg {
+  color: #e5e7eb;
 }
 
 /* 🔴 red badge top-right */
@@ -75,11 +95,19 @@
   margin-top: 12px;
 }
 
+body:not(.light-mode) .invite-empty {
+  color: #9ca3af;
+}
+
 /* Individual invite card */
 .invite-card {
   border-top: 1px solid #eee;
   padding-top: 12px;
   margin-top: 12px;
+}
+
+body:not(.light-mode) .invite-card {
+  border-top-color: rgba(255, 255, 255, 0.08);
 }
 
 .invite-info {
@@ -93,9 +121,17 @@
   font-weight: 600;
 }
 
+body:not(.light-mode) .invite-group {
+  color: #f3f4f6;
+}
+
 .invite-from {
   font-size: 12px;
   color: #666;
+}
+
+body:not(.light-mode) .invite-from {
+  color: #9ca3af;
 }
 
 /* Buttons */
@@ -122,6 +158,11 @@
   color: #fff;
 }
 
+body:not(.light-mode) .invite-btn.accept {
+  background: #1f2937;
+  color: #f9fafb;
+}
+
 .invite-btn.accept:hover {
   background: #000;
 }
@@ -131,6 +172,15 @@
   color: #333;
 }
 
+body:not(.light-mode) .invite-btn.decline {
+  background: #111827;
+  color: #e5e7eb;
+}
+
 .invite-btn.decline:hover {
   background: #e4e4e4;
+}
+
+body:not(.light-mode) .invite-btn.decline:hover {
+  background: #0b1220;
 }
