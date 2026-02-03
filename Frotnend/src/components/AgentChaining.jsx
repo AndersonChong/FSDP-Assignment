@@ -94,12 +94,13 @@ const selectAgent = async (agent) => {
         message: userMessage,
       });
       
-      const res = await queryAgentChain(
-        primaryAgentId,
-        selectedAgent.id,
-        userMessage,
-        true
-      );
+      const res = await queryAgentChain({
+        primary_agent_id: primaryAgentId,
+        secondary_agent_id: selectedAgent.id,
+        user_message: userMessage,
+        pass_context: true,
+      });
+
 
       console.log("Chain response:", res);
 

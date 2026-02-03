@@ -1,9 +1,13 @@
 import { auth } from "./firebase";
-const API_BASE_URL = process.env.REACT_APP_API_URL;
+import { waitForAuthReady } from "./waitForAuthReady";
 
 async function getAuthHeaders() {
-  const user = auth.currentUser;
-  if (!user) return {};
+  const user = auth.currentUser ?? await waitForAuthReady();
+
+  if (!user) {
+    console.warn("⚠️ No Firebase user, skipping auth header");
+    return {};
+  }
 
   const token = await user.getIdToken();
   return {

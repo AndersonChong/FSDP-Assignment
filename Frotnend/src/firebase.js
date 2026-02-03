@@ -20,3 +20,14 @@ import { auth } from "./firebase";
 onAuthStateChanged(auth, (user) => {
   console.log("🔥 Firebase auth user:", user);
 });
+
+import { auth } from "./firebase";
+
+export function waitForAuthReady() {
+  return new Promise((resolve) => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      unsubscribe();
+      resolve(user);
+    });
+  });
+}
