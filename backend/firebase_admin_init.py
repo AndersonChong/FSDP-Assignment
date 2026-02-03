@@ -1,10 +1,15 @@
 # backend/firebase_admin_init.py
+import os
+import json
 import firebase_admin
-from firebase_admin import firestore
+from firebase_admin import credentials, firestore
 
-# Initialize Firebase ONLY ONCE
 if not firebase_admin._apps:
-    firebase_admin.initialize_app()
+    if "GOOGLE_APPLICATION_CREDENTIALS_JSON" not in os.environ:
+        raise RuntimeError("Missing GOOGLE_APPLICATION_CREDENTIALS_JSON")
 
-# Firestore client (global, reused)
+    cred_dict = json.loads(os.environ["GOOGLE_APPLICATION_CREDENTIALS_JSON"])
+    cred = credentials.Certificate(cred_dict)
+    firebase_admin.initialize_app(cred)
+
 db = firestore.client()
