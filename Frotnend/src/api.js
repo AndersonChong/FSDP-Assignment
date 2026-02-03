@@ -1,6 +1,8 @@
 const API_BASE_URL = process.env.REACT_APP_API_URL;
-//const API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0ZXIiLCJleHAiOjE3OTQ1NzU5ODN9.baZmdIL7LBNHU34uAokJ5j-D563yJbWu_VwY8iMjDGM";
 
+if (!API_BASE_URL) {
+  console.error("❌ REACT_APP_API_URL is undefined");
+}
 // ===== AGENT ENDPOINTS =====
 export async function createAgent(agentData) {
   const res = await fetch(`${API_BASE_URL}/agents`, {
