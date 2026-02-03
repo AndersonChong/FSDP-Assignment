@@ -5,8 +5,8 @@ import openai
 from openai import OpenAI
 from models import ChatRequest
 from dotenv import load_dotenv
-import asyncio
-from fastapi import Response
+
+
 import json
 from langdetect import detect, LangDetectException
 
@@ -21,7 +21,7 @@ router = APIRouter()
 
 client = OpenAI(
     api_key=os.getenv("OPENAI_API_KEY"),
-    timeout=10
+    timeout=30
 )
 
 def _language_name(lang_code: str) -> str:
@@ -181,6 +181,15 @@ def call_openai_sync(system_prompt, user_text, image_base64=None):
     )
 
     return response.choices[0].message.content
+
+
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=messages,
+        max_tokens=300,
+    )
+
+    return response.choices[0].message.content
     content = []
 
     if user_text:
@@ -283,96 +292,55 @@ def is_refusal_reply(reply: str) -> bool:
 
 
 @router.post("/query")
-async def chat(req: ChatRequest):
-    # 1. Get agent
-    agent = await asyncio.to_thread(get_agent_sync, req.agent_id)
+def chat(req: ChatRequest):
+    # 1. Get agent (SYNC)
+    agent = get_agent_sync(req.agent_id)
 
-    # Retrieve relevant long-term memory
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+
+    # 2. Retrieve relevant memory
     relevant_memory = get_relevant_memory(
         req.agent_id,
         req.user_message
     )
 
-    if not agent:
-        raise HTTPException(status_code=404, detail="Agent not found")
-
-    # 2. Detect greeting (config-driven)
+    # 3. Detect greeting
     user_text = req.user_message.lower().strip()
     is_greeting = user_text in CONF_RULES["greetings"]
 
-    # 3. Generate AI reply FIRST
+    # 4. Detect language
     user_language = detect_language(req.user_message)
 
-    try:
-        reply = await asyncio.wait_for(
-            asyncio.to_thread(
-                call_openai_sync,
-                build_system_prompt(agent, relevant_memory, user_language),
-                req.user_message,
-                req.image_base64
-            ),
-            timeout=30
-        )
-    except asyncio.TimeoutError:
-        raise HTTPException(status_code=504, detail="AI response timed out")
+    # 5. Call OpenAI (SYNC, BLOCKING BUT SAFE)
+    reply = call_openai_sync(
+        build_system_prompt(agent, relevant_memory, user_language),
+        req.user_message,
+        req.image_base64
+    )
 
-    
     refusal = is_refusal_reply(reply)
 
-    # 3.5 Save long-term memory (only if NOT a refusal)
+    # 6. Save memory if not refusal
     if not refusal:
-        new_memories = extract_memory_from_message(req.user_message)
+        for mem in extract_memory_from_message(req.user_message):
+            db.add_agent_memory(req.agent_id, mem)
 
-        for mem in new_memories:
-            await asyncio.to_thread(
-                db.add_agent_memory,
-                req.agent_id,
-                mem
-            )
-
-
-    # 4. Skip confidence for greetings
-    if is_greeting:
-        return {
-            "reply": reply,
-            "confidence": None
-        }
-    
-    # Skip confidence for refusals
-    if refusal:
+    # 7. Skip confidence for greetings / refusals
+    if is_greeting or refusal:
         return {
             "reply": reply,
             "confidence": None
         }
 
-    # CONFIDENCE SIGNALS
-    # Long-term memory
+    # 8. Confidence logic (unchanged)
     agent_memory = db.get_agent_memory(req.agent_id) or []
     used_long_term_memory = len(relevant_memory) > 0
 
-    # External knowledge (future extension)
-    used_external_knowledge = False
-
-    # Vague question detection (config-driven)
     is_vague = len(req.user_message.strip()) < CONF_RULES["min_length"]
-
-    if not is_vague:
-        for phrase in CONF_RULES["vague_keywords"]:
-            if phrase in user_text:
-                is_vague = True
-                break
-
-    # Override: long, structured questions are not vague
     if len(req.user_message.strip()) > CONF_RULES["clear_length"]:
         is_vague = False
 
-    # Conflicting memory (simple heuristic)
-    has_conflict = False
-    for mem in agent_memory:
-        if "short" in mem.lower() and "detailed" in user_text:
-            has_conflict = True
-
-    # CONFIDENCE SCORING
     score = 100
     reasons = []
 
@@ -380,35 +348,13 @@ async def chat(req: ChatRequest):
         score -= 25
         reasons.append("Limited long-term memory available")
 
-    if not used_external_knowledge:
-        score -= 20
-        reasons.append("No external knowledge enabled")
-
     if is_vague:
         score -= 30
         reasons.append("User question is vague")
 
-    if len(req.user_message.strip()) < 10:
-        score -= 20
-        reasons.append("Insufficient input detail")
+    score = max(0, min(score, 100))
 
-    if has_conflict:
-        score -= 20
-        reasons.append("Conflicting memory detected")
-
-    # Positive signal: clear & specific input
-    if len(req.user_message.strip()) > CONF_RULES["clear_length"] and not is_vague:
-        score += 10
-        reasons.append("Clear and specific question")
-
-    score = min(score, 100)
-
-    if score >= 60:
-        level = "high"
-    elif score >= 30:
-        level = "medium"
-    else:
-        level = "low"
+    level = "high" if score >= 60 else "medium" if score >= 30 else "low"
 
     return {
         "reply": reply,
