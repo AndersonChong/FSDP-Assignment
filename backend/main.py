@@ -4,13 +4,13 @@ load_dotenv()
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routes.agent import router as agent_router
-from .routes.chat import router as chat_router
-from .routes.help import router as help_router
-from .routes.feedback import router as feedback_router
-from .routes.kb import router as kb_router
-from .routes.responses import router as responses_router
-from .routes.chains import router as chains_router
+from routes.agent import router as agent_router
+from routes.chat import router as chat_router
+from routes.help import router as help_router
+from routes.feedback import router as feedback_router
+from routes.kb import router as kb_router
+from routes.responses import router as responses_router
+from routes.chains import router as chains_router
 
 cred_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 
