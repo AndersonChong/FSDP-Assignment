@@ -1,8 +1,9 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: import.meta?.env?.VITE_FIREBASE_API_KEY || process.env.REACT_APP_FIREBASE_API_KEY,
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
   authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
   projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
   storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
@@ -13,21 +14,4 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
-
-import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "./firebase";
-
-onAuthStateChanged(auth, (user) => {
-  console.log("🔥 Firebase auth user:", user);
-});
-
-import { auth } from "./firebase";
-
-export function waitForAuthReady() {
-  return new Promise((resolve) => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      unsubscribe();
-      resolve(user);
-    });
-  });
-}
+export const db = getFirestore(app);

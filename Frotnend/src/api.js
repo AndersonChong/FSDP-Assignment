@@ -1,6 +1,7 @@
+
 import { auth } from "./firebase";
 import { waitForAuthReady } from "./waitForAuthReady";
-
+const API_BASE_URL = process.env.REACT_APP_API_URL;
 async function getAuthHeaders() {
   const user = auth.currentUser ?? await waitForAuthReady();
 
@@ -64,7 +65,7 @@ export async function listAgents() {
   },
 });
 
-  if (!res.ok) throw new Error("Failed to fetch agents/");
+  if (!res.ok) throw new Error("Failed to fetch agents");
   return res.json();
 }
 
