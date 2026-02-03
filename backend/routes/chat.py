@@ -169,6 +169,18 @@ def get_agent_sync(agent_id: str):
     return db.get_agent_by_id(agent_id)
 
 def call_openai_sync(system_prompt, user_text, image_base64=None):
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_text},
+    ]
+
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=messages,
+        max_tokens=300,
+    )
+
+    return response.choices[0].message.content
     content = []
 
     if user_text:
@@ -291,12 +303,18 @@ async def chat(req: ChatRequest):
     # 3. Generate AI reply FIRST
     user_language = detect_language(req.user_message)
 
-    reply = await asyncio.to_thread(
-        call_openai_sync,
-        build_system_prompt(agent, relevant_memory, user_language),
-        req.user_message,
-        req.image_base64
-    )
+    try:
+        reply = await asyncio.wait_for(
+            asyncio.to_thread(
+                call_openai_sync,
+                build_system_prompt(agent, relevant_memory, user_language),
+                req.user_message,
+                req.image_base64
+            ),
+            timeout=30
+        )
+    except asyncio.TimeoutError:
+        raise HTTPException(status_code=504, detail="AI response timed out")
 
     
     refusal = is_refusal_reply(reply)
