@@ -1,4 +1,16 @@
+import { auth } from "./firebase";
 const API_BASE_URL = process.env.REACT_APP_API_URL;
+
+async function getAuthHeaders() {
+  const user = auth.currentUser;
+  if (!user) return {};
+
+  const token = await user.getIdToken();
+  return {
+    Authorization: `Bearer ${token}`,
+  };
+}
+
 console.log("API_BASE_URL:", API_BASE_URL);
 if (!API_BASE_URL) {
   console.error("❌ REACT_APP_API_URL is not defined at build time");
@@ -9,8 +21,8 @@ export async function createAgent(agentData) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      
-    },
+  ...(await getAuthHeaders()),
+},
     body: JSON.stringify(agentData),
   });
 
@@ -26,9 +38,9 @@ export async function routeHelpRequest(prompt) {
   const res = await fetch(`${API_BASE_URL}/help/route`, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
-      
-    },
+  "Content-Type": "application/json",
+  ...(await getAuthHeaders()),
+},
     body: JSON.stringify({ prompt }),
   });
 
@@ -43,8 +55,10 @@ export async function routeHelpRequest(prompt) {
 
 export async function listAgents() {
   const res = await fetch(`${API_BASE_URL}/agents`, {
-    
-  });
+  headers: {
+    ...(await getAuthHeaders()),
+  },
+});
 
   if (!res.ok) throw new Error("Failed to fetch agents");
   return res.json();
@@ -68,8 +82,9 @@ export async function queryAgent(
   const res = await fetch(`${API_BASE_URL}/chat/query`, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
-    },
+  "Content-Type": "application/json",
+  ...(await getAuthHeaders()),
+},
     body: JSON.stringify(body),
   });
 
@@ -85,9 +100,9 @@ export async function submitFeedback(chatId, messageId, agentId, feedbackType, u
   const res = await fetch(`${API_BASE_URL}/feedback`, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
-      
-    },
+  "Content-Type": "application/json",
+  ...(await getAuthHeaders()),
+},
     body: JSON.stringify({
       chat_id: chatId,
       message_id: messageId,
@@ -103,8 +118,10 @@ export async function submitFeedback(chatId, messageId, agentId, feedbackType, u
 
 export async function getAgentFeedback(agentId) {
   const res = await fetch(`${API_BASE_URL}/feedback/agent/${agentId}`, {
-   
-  });
+  headers: {
+    ...(await getAuthHeaders()),
+  },
+});
 
   if (!res.ok) throw new Error("Failed to fetch feedback");
   return res.json();
@@ -112,8 +129,10 @@ export async function getAgentFeedback(agentId) {
 
 export async function getFeedbackStats(agentId) {
   const res = await fetch(`${API_BASE_URL}/feedback/stats/${agentId}`, {
-    
-  });
+  headers: {
+    ...(await getAuthHeaders()),
+  },
+});
 
   if (!res.ok) throw new Error("Failed to fetch feedback stats");
   return res.json();
@@ -124,9 +143,9 @@ export async function uploadKBDocument(agentId, content, sourceType, metadata = 
   const res = await fetch(`${API_BASE_URL}/kb/upload`, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
-      
-    },
+  "Content-Type": "application/json",
+  ...(await getAuthHeaders()),
+},
     body: JSON.stringify({
       agent_id: agentId,
       content: content,
@@ -144,10 +163,12 @@ export async function uploadPDF(agentId, file) {
   formData.append("agent_id", agentId);
 
   const res = await fetch(`${API_BASE_URL}/kb/upload-pdf`, {
-    method: "POST",
-    
-    body: formData,
-  });
+  method: "POST",
+  headers: {
+    ...(await getAuthHeaders()),
+  },
+  body: formData,
+});
 
   if (!res.ok) throw new Error("Failed to upload PDF");
   return res.json();
@@ -157,9 +178,9 @@ export async function uploadText(agentId, content, fileName = "") {
   const res = await fetch(`${API_BASE_URL}/kb/upload-text`, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
-      
-    },
+  "Content-Type": "application/json",
+  ...(await getAuthHeaders()),
+},
     body: JSON.stringify({
       agent_id: agentId,
       content: content,
@@ -178,9 +199,9 @@ export async function uploadFromURL(agentId, url) {
   const res = await fetch(`${API_BASE_URL}/kb/upload-url`, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
-      
-    },
+  "Content-Type": "application/json",
+  ...(await getAuthHeaders()),
+},
     body: JSON.stringify({
       agent_id: agentId,
       content: "",
@@ -199,9 +220,9 @@ export async function uploadFAQ(agentId, faqEntries) {
   const res = await fetch(`${API_BASE_URL}/kb/faq`, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
-      
-    },
+  "Content-Type": "application/json",
+  ...(await getAuthHeaders()),
+},
     body: JSON.stringify({
       agent_id: agentId,
       faq_entries: faqEntries,
@@ -214,8 +235,10 @@ export async function uploadFAQ(agentId, faqEntries) {
 
 export async function getAgentKB(agentId) {
   const res = await fetch(`${API_BASE_URL}/kb/agent/${agentId}`, {
-    
-  });
+  headers: {
+    ...(await getAuthHeaders()),
+  },
+});
 
   if (!res.ok) throw new Error("Failed to fetch KB documents");
   return res.json();
@@ -226,9 +249,9 @@ export async function saveResponse(agentId, userMessage, botResponse, tags = [])
   const res = await fetch(`${API_BASE_URL}/responses/save`, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
-      
-    },
+  "Content-Type": "application/json",
+  ...(await getAuthHeaders()),
+},
     body: JSON.stringify({
       agent_id: agentId,
       user_message: userMessage,
@@ -248,8 +271,10 @@ export async function getSavedResponses(agentId, tags = null) {
   }
 
   const res = await fetch(url, {
-    
-  });
+  headers: {
+    ...(await getAuthHeaders()),
+  },
+});
 
   if (!res.ok) throw new Error("Failed to fetch saved responses");
   return res.json();
@@ -260,9 +285,9 @@ export async function linkAgents(primaryAgentId, secondaryAgentId) {
   return fetch(`${API_BASE_URL}/chains/link`, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
-      
-    },
+  "Content-Type": "application/json",
+  ...(await getAuthHeaders()),
+},
     body: JSON.stringify({
       primary_agent_id: primaryAgentId,
       secondary_agent_id: secondaryAgentId,
@@ -273,7 +298,10 @@ export async function linkAgents(primaryAgentId, secondaryAgentId) {
 export async function queryAgentChain(body) {
   const res = await fetch(`${API_BASE_URL}/chains/query`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+  "Content-Type": "application/json",
+  ...(await getAuthHeaders()),
+},
     body: JSON.stringify(body),
   });
 
@@ -287,8 +315,10 @@ export async function queryAgentChain(body) {
 
 export async function getAgentChains(agentId) {
   const res = await fetch(`${API_BASE_URL}/chains/chains/${agentId}`, {
-    
-  });
+  headers: {
+    ...(await getAuthHeaders()),
+  },
+});
 
   if (!res.ok) throw new Error("Failed to fetch agent chains");
   return res.json();
