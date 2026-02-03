@@ -1,7 +1,7 @@
 # backend/db.py
 from typing import Optional, List, Dict
 from datetime import datetime
-from .firebase_admin_init import db
+from firebase_admin_init import db
 
 COLLECTION_AGENTS = "agents"
 COLLECTION_FEEDBACK = "feedback"
